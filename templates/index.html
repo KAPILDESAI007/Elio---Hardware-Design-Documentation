@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elio - Hardware Design & Documentation</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <h1>Elio - Hardware Design & Documentation</h1>
+        </header>
+
+        <div class="app-body">
+            <aside class="sidebar">
+                <nav class="sidebar-nav">
+                    <a href="#" class="nav-item active" data-page="design-input-review">
+                        <span class="nav-icon">📊</span>
+                        <span class="nav-label">Design Input Review</span>
+                    </a>
+                    <a href="#" class="nav-item" data-page="nest-loading">
+                        <span class="nav-icon">📋</span>
+                        <span class="nav-label">Nest Loading & IO Assignment</span>
+                    </a>
+                    <a href="#" class="nav-item" data-page="bill-of-materials">
+                        <span class="nav-icon">📦</span>
+                        <span class="nav-label">Hardware Bill of Materials</span>
+                    </a>
+                    <a href="#" class="nav-item" data-page="controller-loading">
+                        <span class="nav-icon">⚙️</span>
+                        <span class="nav-label">Controller Loading</span>
+                    </a>
+                    <a href="#" class="nav-item" data-page="wiring-diagram">
+                        <span class="nav-icon">🔌</span>
+                        <span class="nav-label">Wiring Diagram</span>
+                    </a>
+                    <div class="nav-section">
+                        <a href="#" class="nav-item collapsible" data-section="io-loop">
+                            <span class="nav-icon">📊</span>
+                            <span class="nav-label">I/O Loop Check</span>
+                            <span class="collapse-icon">▶</span>
+                        </a>
+                        <div class="nav-subsection hidden" id="io-loop-section">
+                            <a href="#" class="nav-subitem" data-page="digital-input">Digital Input Signals</a>
+                            <a href="#" class="nav-subitem" data-page="digital-output">Digital Output Signals</a>
+                            <a href="#" class="nav-subitem" data-page="analog-input">Analog Input Signals</a>
+                            <a href="#" class="nav-subitem" data-page="analog-output">Analog Output Signals</a>
+                        </div>
+                    </div>
+                    <a href="#" class="nav-item" data-page="cable-schedule">
+                        <span class="nav-icon">📋</span>
+                        <span class="nav-label">Cable Schedule</span>
+                    </a>
+                    <hr class="sidebar-divider">
+                    <a href="#" class="nav-item" data-page="process-flow">
+                        <span class="nav-icon">🔄</span>
+                        <span class="nav-label">Process Flow</span>
+                    </a>
+                </nav>
+            </aside>
+
+            <main class="main-content">
+                <!-- Design Input Review Page -->
+                <section id="page-design-input-review" class="page active">
+                    <h2>Design Input Review</h2>
+                    <div class="upload-section">
+                        <form id="designForm" enctype="multipart/form-data">
+                            <!-- File Upload -->
+                            <div class="form-group">
+                                <label for="designFile">Input File (Required) *</label>
+                                <input type="file" id="designFile" name="input_file" accept=".xls,.xlsx" required>
+                                <small>Supported formats: .xls, .xlsx</small>
+                            </div>
+
+                            <!-- System Type and Wired Spares (Side by side) -->
+                            <div class="form-row">
+                                <div class="form-group form-col">
+                                    <label for="systemType">System Type <span class="column-indicator" id="signalOriginIndicator"></span></label>
+                                    <select id="systemType" name="system_type">
+                                        <option value="">-- Select System Type --</option>
+                                        <option value="ESD">ESD</option>
+                                        <option value="FGS">FGS</option>
+                                        <option value="DCS">DCS</option>
+                                    </select>
+                                    <small>Used if signal_origin column is not available in file</small>
+                                </div>
+
+                                <div class="form-group form-col">
+                                    <label for="wiredSpares">Wired Spares %</label>
+                                    <input type="number" id="wiredSpares" name="wired_spares" min="0" max="100" step="5" placeholder="e.g., 10, 20, 5">
+                                    <small>Enter percentage (0-100) to add wired spare channels. Leave blank for none.</small>
+                                </div>
+                            </div>
+
+                            <!-- IO Redundancy Selection -->
+                            <div class="form-group">
+                                <label>IO Redundancy <span class="column-indicator" id="ioRedundancyIndicator"></span></label>
+                                <small>Select signal types to mark as redundant (if IO_REDUNDANCY column not available)</small>
+                                <div class="checkbox-group">
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" name="redundancy_types" value="AI"> AI (Analog Input)
+                                    </label>
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" name="redundancy_types" value="DI"> DI (Digital Input)
+                                    </label>
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" name="redundancy_types" value="AO"> AO (Analog Output)
+                                    </label>
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" name="redundancy_types" value="DO"> DO (Digital Output)
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- IS/Non-IS Selection -->
+                            <div class="form-group">
+                                <label>IS/Non-IS Type <span class="column-indicator" id="isNonIsIndicator"></span></label>
+                                <small>Select signal types to mark as IS (if IS_Non_IS column not available, rest will be NIS)</small>
+                                <div class="checkbox-group">
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" name="is_types" value="AI"> AI (Analog Input)
+                                    </label>
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" name="is_types" value="DI"> DI (Digital Input)
+                                    </label>
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" name="is_types" value="AO"> AO (Analog Output)
+                                    </label>
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" name="is_types" value="DO"> DO (Digital Output)
+                                    </label>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn-primary">Process</button>
+                        </form>
+                    </div>
+
+                    <section class="progress-section" id="designProgressSection" style="display: none;">
+                        <h3>Processing...</h3>
+                        <div class="progress-bar">
+                            <div class="progress-fill"></div>
+                        </div>
+                    </section>
+
+                    <section class="results-section" id="designResultsSection" style="display: none;">
+                        <h3>Results</h3>
+                        <button class="btn-success" id="designDownloadBtn">Download Output File</button>
+                    </section>
+
+                    <section class="logs-section">
+                        <h3>Process Logs</h3>
+                        <div class="logs-container" id="designLogsContainer">
+                            <p class="log-empty">Logs will appear here...</p>
+                        </div>
+                    </section>
+                    </section>
+
+                <!-- Nest Loading & IO Assignment Page -->
+                <section id="page-nest-loading" class="page">
+                    <h2>Nest Loading & IO Assignment</h2>
+                    <div class="upload-section">
+                        <form id="uploadForm" enctype="multipart/form-data">
+                            <div class="form-group">
+                                <label for="customerFile">Customer Database File (Required) *</label>
+                                <input type="file" id="customerFile" name="customer_file" accept=".xls,.xlsx" required>
+                                <small>Supported formats: .xls, .xlsx</small>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="templateFile">Template File (Optional)</label>
+                                <input type="file" id="templateFile" name="template_file" accept=".xlsx">
+                                <small>Leave empty to use default template</small>
+                            </div>
+
+                            <button type="submit" class="btn-primary">Process</button>
+                        </form>
+                    </div>
+
+                    <section class="progress-section" id="progressSection" style="display: none;">
+                        <h3>Processing...</h3>
+                        <div class="progress-bar">
+                            <div class="progress-fill"></div>
+                        </div>
+                    </section>
+
+                    <section class="results-section" id="resultsSection" style="display: none;">
+                        <h3>Results</h3>
+                        <button class="btn-success" id="downloadBtn">Download Output File</button>
+                    </section>
+
+                    <section class="logs-section">
+                        <h3>Process Logs</h3>
+                        <div class="logs-container" id="logsContainer">
+                            <p class="log-empty">Logs will appear here...</p>
+                        </div>
+                    </section>
+                </section>
+                <section id="page-bill-of-materials" class="page">
+                    <div class="coming-soon">
+                        <h2>Hardware Bill of Materials</h2>
+                        <p>Coming Soon...</p>
+                    </div>
+                </section>
+
+                <section id="page-controller-loading" class="page">
+                    <div class="coming-soon">
+                        <h2>Controller Loading</h2>
+                        <p>Coming Soon...</p>
+                    </div>
+                </section>
+
+                <section id="page-wiring-diagram" class="page">
+                    <div class="coming-soon">
+                        <h2>Wiring Diagram</h2>
+                        <p>Coming Soon...</p>
+                    </div>
+                </section>
+
+                <section id="page-digital-input" class="page">
+                    <div class="coming-soon">
+                        <h2>Digital Input Signals</h2>
+                        <p>Coming Soon...</p>
+                    </div>
+                </section>
+
+                <section id="page-digital-output" class="page">
+                    <div class="coming-soon">
+                        <h2>Digital Output Signals</h2>
+                        <p>Coming Soon...</p>
+                    </div>
+                </section>
+
+                <section id="page-analog-input" class="page">
+                    <div class="coming-soon">
+                        <h2>Analog Input Signals</h2>
+                        <p>Coming Soon...</p>
+                    </div>
+                </section>
+
+                <section id="page-analog-output" class="page">
+                    <div class="coming-soon">
+                        <h2>Analog Output Signals</h2>
+                        <p>Coming Soon...</p>
+                    </div>
+                </section>
+
+                <section id="page-cable-schedule" class="page">
+                    <div class="coming-soon">
+                        <h2>Cable Schedule</h2>
+                        <p>Coming Soon...</p>
+                    </div>
+                </section>
+
+                <!-- Process Flow Page -->
+                <section id="page-process-flow" class="page">
+                    <h2>Process Workflow</h2>
+                    
+                    <div class="flow-diagram">
+                        <div class="flow-step">
+                            <div class="step-number">1</div>
+                            <h3>Input: Customer Database</h3>
+                            <p>Read Excel file containing PID tags, nodes, slots, and module information</p>
+                        </div>
+
+                        <div class="flow-arrow">↓</div>
+
+                        <div class="flow-step">
+                            <div class="step-number">2</div>
+                            <h3>Template Setup</h3>
+                            <p>Copy template with 2 sheets: Front_Template & FrontLoading</p>
+                        </div>
+
+                        <div class="flow-arrow">↓</div>
+
+                        <div class="flow-step">
+                            <div class="step-number">3</div>
+                            <h3>Sheet 1: PID Tag Assignment</h3>
+                            <p><strong>Front_Template</strong></p>
+                            <ul>
+                                <li>Extract PID tags by Node, Slot, and Channel</li>
+                                <li>Map tags to corresponding cells</li>
+                                <li>Fill Cabinet No and Station Name headers</li>
+                            </ul>
+                        </div>
+
+                        <div class="flow-arrow">↓</div>
+
+                        <div class="flow-step">
+                            <div class="step-number">4</div>
+                            <h3>Sheet 2: Module Name Assignment</h3>
+                            <p><strong>FrontLoading</strong></p>
+                            <ul>
+                                <li>Extract IO_MODULE names by Node and Slot</li>
+                                <li>Identify redundancy (mark with R)</li>
+                                <li>Place module names in merged cells</li>
+                            </ul>
+                        </div>
+
+                        <div class="flow-arrow">↓</div>
+
+                        <div class="flow-step">
+                            <div class="step-number">5</div>
+                            <h3>Station Information</h3>
+                            <p>Write station name and node information to AM-AN columns</p>
+                        </div>
+
+                        <div class="flow-arrow">↓</div>
+
+                        <div class="flow-step">
+                            <div class="step-number">6</div>
+                            <h3>Output: Hardware Documentation</h3>
+                            <p>Generate single Excel file with both sheets populated</p>
+                        </div>
+                    </div>
+
+                    <div class="flow-notes">
+                        <h3>Key Points:</h3>
+                        <ul>
+                            <li><strong>Node Structure:</strong> Each node has 16 channels with multiple slots</li>
+                            <li><strong>Merged Cells:</strong> Template uses merged cells, automatically handled</li>
+                            <li><strong>Redundancy:</strong> Adjacent slots marked as (R)</li>
+                            <li><strong>Error Handling:</strong> Validates all inputs and handles missing data gracefully</li>
+                        </ul>
+                    </div>
+                </section>
+            </main>
+        </div>
+
+        <footer class="app-footer">
+            <p>&copy; 2024 Cloud App - Hardware Design & Documentation</p>
+        </footer>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <script>
+        // Design Input Review handler
+        document.getElementById('designForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            
+            document.getElementById('designProgressSection').style.display = 'block';
+            document.getElementById('designResultsSection').style.display = 'none';
+            document.getElementById('designLogsContainer').innerHTML = '<p class="log-empty">Processing...</p>';
+            
+            fetch('/api/design-input-review', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('designProgressSection').style.display = 'none';
+                
+                if (data.success) {
+                    document.getElementById('designResultsSection').style.display = 'block';
+                    window.designOutputFile = data.output_file;
+                    displayLogs(data.logs, 'designLogsContainer');
+                } else {
+                    document.getElementById('designLogsContainer').innerHTML = `<p class="log-error">Error: ${data.error}</p>`;
+                }
+            });
+        });
+        
+        document.getElementById('designDownloadBtn').addEventListener('click', function() {
+            if (window.designOutputFile) {
+                window.location.href = '/api/download/' + encodeURIComponent(window.designOutputFile);
+            }
+        });
+        
+        function displayLogs(logs, containerId) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            logs.forEach(log => {
+                const logEntry = document.createElement('p');
+                logEntry.className = `log-entry log-${log.level.toLowerCase()}`;
+                logEntry.textContent = `[${log.time}] ${log.message}`;
+                container.appendChild(logEntry);
+            });
+        }
+    </script>
+</body>
+</html>

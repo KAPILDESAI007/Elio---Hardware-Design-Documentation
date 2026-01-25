@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Process Flow - Cloud App</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Elio - Hardware Design & Documentation</h1>
+            <nav>
+                <a href="/">Upload & Process</a>
+                <a href="/process-flow">Process Flow</a>
+            </nav>
+        </header>
+
+        <main>
+            <section class="flow-section">
+                <h2>Process Workflow</h2>
+                
+                <div class="flow-diagram">
+                    <div class="flow-step">
+                        <div class="step-number">1</div>
+                        <h3>Input: Customer Database</h3>
+                        <p>Read Excel file containing PID tags, nodes, slots, and module information</p>
+                    </div>
+
+                    <div class="flow-arrow">↓</div>
+
+                    <div class="flow-step">
+                        <div class="step-number">2</div>
+                        <h3>Template Setup</h3>
+                        <p>Copy template with 2 sheets: Front_Template & FrontLoading</p>
+                    </div>
+
+                    <div class="flow-arrow">↓</div>
+
+                    <div class="flow-step">
+                        <div class="step-number">3</div>
+                        <h3>Sheet 1: PID Tag Assignment</h3>
+                        <p><strong>Front_Template (494-ESD-06_X)</strong></p>
+                        <ul>
+                            <li>Extract PID tags by Node, Slot, and Channel</li>
+                            <li>Map tags to corresponding cells in the template</li>
+                            <li>Fill Cabinet No and Station Name headers</li>
+                        </ul>
+                    </div>
+
+                    <div class="flow-arrow">↓</div>
+
+                    <div class="flow-step">
+                        <div class="step-number">4</div>
+                        <h3>Sheet 2: Module Name Assignment</h3>
+                        <p><strong>FrontLoading (SCS0122_FrontLoading)</strong></p>
+                        <ul>
+                            <li>Extract IO_MODULE names by Node and Slot</li>
+                            <li>Identify redundancy (mark with R)</li>
+                            <li>Place module names in correct merged cells</li>
+                        </ul>
+                    </div>
+
+                    <div class="flow-arrow">↓</div>
+
+                    <div class="flow-step">
+                        <div class="step-number">5</div>
+                        <h3>Station Information</h3>
+                        <p>Write station name and node information to AM-AN columns for reference</p>
+                    </div>
+
+                    <div class="flow-arrow">↓</div>
+
+                    <div class="flow-step">
+                        <div class="step-number">6</div>
+                        <h3>Output: Hardware Documentation</h3>
+                        <p>Generate single Excel file with both sheets populated and ready for hardware design</p>
+                    </div>
+                </div>
+
+                <div class="flow-notes">
+                    <h3>Key Points:</h3>
+                    <ul>
+                        <li><strong>Node Structure:</strong> Each node has 16 channels (1-16) with multiple slots (S1-S8)</li>
+                        <li><strong>Merged Cells:</strong> Template uses merged cells for channel rows. Code handles this automatically</li>
+                        <li><strong>Redundancy:</strong> When SLOT_R (redundant slot) is adjacent to SLOT_P, marked as (R)</li>
+                        <li><strong>Header Mapping:</strong> Cabinet name and station name are extracted and placed in designated cells</li>
+                        <li><strong>Error Handling:</strong> Gracefully handles missing data and validates all inputs</li>
+                    </ul>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>&copy; 2024 Cloud App - Hardware Design & Documentation</p>
+        </footer>
+    </div>
+</body>
+</html>

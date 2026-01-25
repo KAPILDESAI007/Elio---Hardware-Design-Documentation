@@ -1,0 +1,771 @@
+2025-11-24 18:44:56,448 - INFO - Reading customer file: C:\Working\Others\Python\Cloud App Projects\3291-36930B-J032-020 RevC_ESD.xls
+2025-11-24 18:44:56,548 - INFO - Customer file loaded successfully with 1323 rows
+2025-11-24 18:44:56,549 - INFO - Cabinet: 494-ESD-06/X, Station: SCS0122
+2025-11-24 18:44:56,549 - INFO - Output file exists, removing old file
+2025-11-24 18:44:56,550 - INFO - Copying template file
+2025-11-24 18:44:57,256 - INFO - Renamed Front_Template to 494-ESD-06_X
+2025-11-24 18:44:57,256 - INFO - Renamed FrontLoading to SCS0122_FrontLoading
+2025-11-24 18:44:57,389 - INFO - Processing 494-ESD-06_X sheet with PIDTagFiller
+2025-11-24 18:44:57,389 - INFO - Processing PID tags for sheet: 494-ESD-06_X
+2025-11-24 18:44:58,859 - INFO - Filled 322 PID tags in 494-ESD-06_X
+2025-11-24 18:44:58,988 - DEBUG - Workbook saved: C:\Working\Others\Python\Cloud App Projects\494-ESD-06XF.xlsx
+2025-11-24 18:44:59,999 - INFO - Processing SCS0122_FrontLoading sheet with ModuleNameAdder
+2025-11-24 18:44:59,999 - INFO - Processing module names for sheet: SCS0122_FrontLoading
+2025-11-24 18:45:00,750 - INFO - Filled 40 module names in SCS0122_FrontLoading
+2025-11-24 18:45:00,893 - DEBUG - Workbook saved: C:\Working\Others\Python\Cloud App Projects\494-ESD-06XF.xlsx
+2025-11-24 18:45:01,894 - INFO - Writing station information to sheets
+2025-11-24 18:45:01,894 - INFO - Writing station info to 2 sheets
+2025-11-24 18:45:03,104 - INFO - Station info written successfully
+2025-11-24 18:45:03,104 - INFO - Processing completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\494-ESD-06XF.xlsx
+2025-11-24 18:45:15,613 - INFO - Reading customer file: C:\Working\Others\Python\Cloud App Projects\3291-36930B-J032-020 RevC_ESD.xls
+2025-11-24 18:45:15,701 - INFO - Customer file loaded successfully with 1323 rows
+2025-11-24 18:45:15,701 - INFO - Cabinet: 494-ESD-06/X, Station: SCS0122
+2025-11-24 18:45:15,702 - INFO - Output file exists, removing old file
+2025-11-24 18:45:15,703 - INFO - Copying template file
+2025-11-24 18:45:16,526 - INFO - Renamed Front_Template to 494-ESD-06_X
+2025-11-24 18:45:16,526 - INFO - Renamed FrontLoading to SCS0122_FrontLoading
+2025-11-24 18:45:16,764 - INFO - Processing 494-ESD-06_X sheet with PIDTagFiller
+2025-11-24 18:45:16,764 - INFO - Processing PID tags for sheet: 494-ESD-06_X
+2025-11-24 18:45:18,389 - INFO - Filled 322 PID tags in 494-ESD-06_X
+2025-11-24 18:45:18,522 - DEBUG - Workbook saved: C:\Working\Others\Python\Cloud App Projects\494-ESD-06XF.xlsx
+2025-11-24 18:45:19,534 - INFO - Processing SCS0122_FrontLoading sheet with ModuleNameAdder
+2025-11-24 18:45:19,534 - INFO - Processing module names for sheet: SCS0122_FrontLoading
+2025-11-24 18:45:20,286 - INFO - Filled 40 module names in SCS0122_FrontLoading
+2025-11-24 18:45:20,424 - DEBUG - Workbook saved: C:\Working\Others\Python\Cloud App Projects\494-ESD-06XF.xlsx
+2025-11-24 18:45:21,425 - INFO - Writing station information to sheets
+2025-11-24 18:45:21,425 - INFO - Writing station info to 2 sheets
+2025-11-24 18:45:22,545 - INFO - Station info written successfully
+2025-11-24 18:45:22,547 - INFO - Processing completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\494-ESD-06XF.xlsx
+2025-11-24 18:46:52,040 - INFO - Reading customer file: C:\Working\Others\Python\Cloud App Projects\3291-36930B-J032-020 RevC_ESD.xls
+2025-11-24 18:46:52,132 - INFO - Customer file loaded successfully with 1323 rows
+2025-11-24 18:46:52,132 - INFO - Cabinet: 494-ESD-06/X, Station: SCS0122
+2025-11-24 18:46:52,132 - INFO - Output file exists, removing old file
+2025-11-24 18:46:52,132 - INFO - Copying template file
+2025-11-24 18:46:52,810 - INFO - Renamed Front_Template to 494-ESD-06_X
+2025-11-24 18:46:52,810 - INFO - Renamed FrontLoading to SCS0122_FrontLoading
+2025-11-24 18:46:52,948 - INFO - Processing 494-ESD-06_X sheet with PIDTagFiller
+2025-11-24 18:46:52,948 - INFO - Processing PID tags for sheet: 494-ESD-06_X
+2025-11-24 18:46:54,425 - INFO - Filled 322 PID tags in 494-ESD-06_X
+2025-11-24 18:46:54,569 - DEBUG - Workbook saved: C:\Working\Others\Python\Cloud App Projects\494-ESD-06XF.xlsx
+2025-11-24 18:46:55,572 - INFO - Processing SCS0122_FrontLoading sheet with ModuleNameAdder
+2025-11-24 18:46:55,572 - INFO - Processing module names for sheet: SCS0122_FrontLoading
+2025-11-24 18:46:56,327 - INFO - Filled 40 module names in SCS0122_FrontLoading
+2025-11-24 18:46:56,462 - DEBUG - Workbook saved: C:\Working\Others\Python\Cloud App Projects\494-ESD-06XF.xlsx
+2025-11-24 18:46:57,464 - INFO - Writing station information to sheets
+2025-11-24 18:46:57,464 - INFO - Writing station info to 2 sheets
+2025-11-24 18:46:58,348 - INFO - Station info written successfully
+2025-11-24 18:46:58,348 - INFO - Processing completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\494-ESD-06XF.xlsx
+2025-11-24 19:11:10,062 - INFO - Reading customer file: C:\Working\Others\Python\Cloud App Projects\uploads\customer_1764036670.xls
+2025-11-24 19:11:10,366 - INFO - Customer file loaded successfully with 1323 rows
+2025-11-24 19:11:10,374 - INFO - Cabinet: 494-ESD-06/X, Station: SCS0122
+2025-11-24 19:11:10,375 - INFO - Copying template file
+2025-11-24 19:11:11,914 - INFO - Renamed Front_Template to 494-ESD-06_X
+2025-11-24 19:11:11,914 - INFO - Renamed FrontLoading to SCS0122_FrontLoading
+2025-11-24 19:11:12,174 - INFO - Processing 494-ESD-06_X sheet
+2025-11-24 19:11:12,174 - INFO - Processing PID tags for sheet: 494-ESD-06_X
+2025-11-24 19:11:14,857 - INFO - Filled 322 PID tags in 494-ESD-06_X
+2025-11-24 19:11:15,142 - DEBUG - Workbook saved: C:\Working\Others\Python\Cloud App Projects\uploads\output_1764036670.xlsx
+2025-11-24 19:11:15,645 - INFO - Processing SCS0122_FrontLoading sheet
+2025-11-24 19:11:15,645 - INFO - Processing module names for sheet: SCS0122_FrontLoading
+2025-11-24 19:11:17,124 - INFO - Filled 40 module names in SCS0122_FrontLoading
+2025-11-24 19:11:17,390 - DEBUG - Workbook saved: C:\Working\Others\Python\Cloud App Projects\uploads\output_1764036670.xlsx
+2025-11-24 19:11:17,892 - INFO - Writing station information
+2025-11-24 19:11:17,892 - INFO - Writing station info to 2 sheets
+2025-11-24 19:11:19,657 - INFO - Station info written successfully
+2025-11-24 19:11:19,658 - INFO - Processing completed successfully
+2025-11-24 19:34:54,137 - INFO - Reading customer file
+2025-11-24 19:34:54,386 - INFO - Customer file loaded successfully with 1323 rows
+2025-11-24 19:34:54,386 - INFO - Cabinet: 494-ESD-06/X, Station: SCS0122
+2025-11-24 19:34:54,386 - INFO - Copying template file
+2025-11-24 19:34:56,318 - INFO - Renamed Front_Template to 494-ESD-06_X
+2025-11-24 19:34:56,318 - INFO - Renamed FrontLoading to SCS0122_FrontLoading
+2025-11-24 19:34:56,602 - INFO - Processing 494-ESD-06_X sheet
+2025-11-24 19:34:56,602 - INFO - Processing PID tags for sheet: 494-ESD-06_X
+2025-11-24 19:34:59,635 - INFO - Filled 322 PID tags in 494-ESD-06_X
+2025-11-24 19:34:59,914 - DEBUG - Workbook saved: C:\Working\Others\Python\Cloud App Projects\uploads\output_1764038094.xlsx
+2025-11-24 19:35:00,418 - INFO - Processing SCS0122_FrontLoading sheet
+2025-11-24 19:35:00,419 - INFO - Processing module names for sheet: SCS0122_FrontLoading
+2025-11-24 19:35:02,084 - INFO - Filled 40 module names in SCS0122_FrontLoading
+2025-11-24 19:35:02,301 - DEBUG - Workbook saved: C:\Working\Others\Python\Cloud App Projects\uploads\output_1764038094.xlsx
+2025-11-24 19:35:02,808 - INFO - Writing station information
+2025-11-24 19:35:02,808 - INFO - Writing station info to 2 sheets
+2025-11-24 19:35:04,624 - INFO - Station info written successfully
+2025-11-24 19:35:04,628 - INFO - Processing completed successfully
+2025-11-24 19:41:13,561 - INFO - Reading customer file
+2025-11-24 19:41:13,811 - INFO - Customer file loaded successfully with 1323 rows
+2025-11-24 19:41:13,811 - INFO - Cabinet: 494-ESD-06/X, Station: SCS0122
+2025-11-24 19:41:13,811 - INFO - Copying template file
+2025-11-24 19:41:15,345 - INFO - Renamed Front_Template to 494-ESD-06_X
+2025-11-24 19:41:15,345 - INFO - Renamed FrontLoading to SCS0122_FrontLoading
+2025-11-24 19:41:15,578 - INFO - Processing 494-ESD-06_X sheet
+2025-11-24 19:41:15,578 - INFO - Processing PID tags for sheet: 494-ESD-06_X
+2025-11-24 19:41:18,394 - INFO - Filled 322 PID tags in 494-ESD-06_X
+2025-11-24 19:41:18,630 - DEBUG - Workbook saved: C:\Working\Others\Python\Cloud App Projects\uploads\output_1764038473.xlsx
+2025-11-24 19:41:19,132 - INFO - Processing SCS0122_FrontLoading sheet
+2025-11-24 19:41:19,132 - INFO - Processing module names for sheet: SCS0122_FrontLoading
+2025-11-24 19:41:20,594 - INFO - Filled 40 module names in SCS0122_FrontLoading
+2025-11-24 19:41:20,828 - DEBUG - Workbook saved: C:\Working\Others\Python\Cloud App Projects\uploads\output_1764038473.xlsx
+2025-11-24 19:41:21,328 - INFO - Writing station information
+2025-11-24 19:41:21,328 - INFO - Writing station information to 2 sheets
+2025-11-24 19:41:23,077 - DEBUG - Workbook saved: C:\Working\Others\Python\Cloud App Projects\uploads\output_1764038473.xlsx
+2025-11-24 19:41:23,077 - INFO - Station information written successfully
+2025-11-24 19:41:23,077 - INFO - Processing completed successfully
+2025-11-24 19:43:51,399 - INFO - Reading customer file
+2025-11-24 19:43:51,536 - INFO - Customer file loaded successfully with 1323 rows
+2025-11-24 19:43:51,536 - INFO - Cabinet: 494-ESD-06/X, Station: SCS0122
+2025-11-24 19:43:51,536 - INFO - Copying template file
+2025-11-24 19:43:52,419 - INFO - Renamed Front_Template to 494-ESD-06_X
+2025-11-24 19:43:52,419 - INFO - Renamed FrontLoading to SCS0122_FrontLoading
+2025-11-24 19:43:52,585 - INFO - Processing 494-ESD-06_X sheet
+2025-11-24 19:43:52,585 - INFO - Processing PID tags for sheet: 494-ESD-06_X
+2025-11-24 19:43:54,836 - INFO - Filled 322 PID tags in 494-ESD-06_X
+2025-11-24 19:43:55,117 - DEBUG - Workbook saved: C:\Working\Others\Python\Cloud App Projects\uploads\output_1764038631.xlsx
+2025-11-24 19:43:55,619 - INFO - Processing SCS0122_FrontLoading sheet
+2025-11-24 19:43:55,619 - INFO - Processing module names for sheet: SCS0122_FrontLoading
+2025-11-24 19:43:57,006 - INFO - Filled 40 module names in SCS0122_FrontLoading
+2025-11-24 19:43:57,235 - DEBUG - Workbook saved: C:\Working\Others\Python\Cloud App Projects\uploads\output_1764038631.xlsx
+2025-11-24 19:43:57,735 - INFO - Writing station information
+2025-11-24 19:43:57,736 - INFO - Writing station information to 2 sheets
+2025-11-24 19:43:59,169 - DEBUG - Workbook saved: C:\Working\Others\Python\Cloud App Projects\uploads\output_1764038631.xlsx
+2025-11-24 19:43:59,169 - INFO - Station information written successfully
+2025-11-24 19:43:59,169 - INFO - Processing completed successfully
+2025-11-24 19:47:49,760 - INFO - Reading customer file
+2025-11-24 19:47:49,954 - INFO - Customer file loaded successfully with 1323 rows
+2025-11-24 19:47:49,954 - INFO - Cabinet: 494-ESD-06/X, Station: SCS0122
+2025-11-24 19:47:49,954 - INFO - Copying template file
+2025-11-24 19:47:51,305 - INFO - Renamed Front_Template to 494-ESD-06_X
+2025-11-24 19:47:51,305 - INFO - Renamed FrontLoading to SCS0122_FrontLoading
+2025-11-24 19:47:51,538 - INFO - Processing 494-ESD-06_X sheet
+2025-11-24 19:47:51,538 - ERROR - Processing failed: PIDTagFiller.__init__() takes 2 positional arguments but 4 were given
+2025-11-24 19:48:38,202 - INFO - Reading customer file
+2025-11-24 19:48:38,354 - INFO - Customer file loaded successfully with 1323 rows
+2025-11-24 19:48:38,355 - INFO - Cabinet: 494-ESD-06/X, Station: SCS0122
+2025-11-24 19:48:38,355 - INFO - Copying template file
+2025-11-24 19:48:39,223 - INFO - Renamed Front_Template to 494-ESD-06_X
+2025-11-24 19:48:39,223 - INFO - Renamed FrontLoading to SCS0122_FrontLoading
+2025-11-24 19:48:39,390 - INFO - Processing 494-ESD-06_X sheet
+2025-11-24 19:48:39,900 - INFO - Processing SCS0122_FrontLoading sheet
+2025-11-24 19:48:40,401 - INFO - Writing station information
+2025-11-24 19:48:40,401 - INFO - Processing completed successfully
+2025-11-24 19:51:56,943 - INFO - Reading customer file
+2025-11-24 19:51:57,114 - INFO - Customer file loaded successfully with 1323 rows
+2025-11-24 19:51:57,115 - INFO - Cabinet: 494-ESD-06/X, Station: SCS0122
+2025-11-24 19:51:57,116 - INFO - Copying template file
+2025-11-24 19:51:57,994 - INFO - Renamed Front_Template to 494-ESD-06_X
+2025-11-24 19:51:58,004 - INFO - Renamed FrontLoading to SCS0122_FrontLoading
+2025-11-24 19:51:58,160 - INFO - Processing 494-ESD-06_X sheet
+2025-11-24 19:51:59,935 - INFO - Processing SCS0122_FrontLoading sheet
+2025-11-24 19:52:01,706 - INFO - Writing station information
+2025-11-24 19:52:03,554 - INFO - Processing completed successfully
+2025-11-24 20:05:38,570 - INFO - Reading customer file
+2025-11-24 20:05:38,737 - INFO - Customer file loaded successfully with 1323 rows
+2025-11-24 20:05:38,737 - INFO - Cabinet: 494-ESD-06/X, Station: SCS0122
+2025-11-24 20:05:38,737 - INFO - Copying template file
+2025-11-24 20:05:39,603 - INFO - Renamed Front_Template to 494-ESD-06_X
+2025-11-24 20:05:39,603 - INFO - Renamed FrontLoading to SCS0122_FrontLoading
+2025-11-24 20:05:39,770 - INFO - Processing 494-ESD-06_X sheet
+2025-11-24 20:05:41,528 - INFO - Processing SCS0122_FrontLoading sheet
+2025-11-24 20:05:43,072 - INFO - Filling module details
+2025-11-24 20:05:44,551 - INFO - Filling FrontLoading details
+2025-11-24 20:05:46,106 - INFO - Writing station information
+2025-11-24 20:05:48,086 - INFO - Processing completed successfully
+2025-11-24 21:36:33,392 - INFO - Reading customer file
+2025-11-24 21:36:33,583 - INFO - Customer file loaded successfully with 1323 rows
+2025-11-24 21:36:33,583 - INFO - Cabinet: 494-ESD-06/X, Station: SCS0122
+2025-11-24 21:36:33,583 - INFO - Copying template file
+2025-11-24 21:36:34,898 - INFO - Renamed Front_Template to 494-ESD-06_X
+2025-11-24 21:36:34,898 - INFO - Renamed FrontLoading to SCS0122_FrontLoading
+2025-11-24 21:36:35,148 - INFO - Processing 494-ESD-06_X sheet
+2025-11-24 21:36:37,722 - INFO - Processing SCS0122_FrontLoading sheet
+2025-11-24 21:36:40,081 - INFO - Filling module details
+2025-11-24 21:36:42,309 - INFO - Filling FrontLoading details
+2025-11-24 21:36:44,526 - INFO - Writing station information
+2025-11-24 21:36:47,747 - INFO - Processing completed successfully
+2025-11-24 21:39:37,954 - INFO - Reading customer file
+2025-11-24 21:39:38,172 - INFO - Customer file loaded successfully with 1323 rows
+2025-11-24 21:39:38,172 - INFO - Cabinet: 494-ESD-06/X, Station: SCS0122
+2025-11-24 21:39:38,172 - INFO - Copying template file
+2025-11-24 21:39:39,386 - INFO - Renamed Front_Template to 494-ESD-06_X
+2025-11-24 21:39:39,386 - INFO - Renamed FrontLoading to SCS0122_FrontLoading
+2025-11-24 21:39:39,670 - INFO - Processing 494-ESD-06_X sheet
+2025-11-24 21:39:42,135 - INFO - Processing SCS0122_FrontLoading sheet
+2025-11-24 21:39:44,222 - INFO - Filling module details
+2025-11-24 21:39:46,156 - INFO - Filling FrontLoading details
+2025-11-24 21:39:47,486 - ERROR - Processing failed: 'ModuleDetailsFiller' object has no attribute '_fill_frontloading_details'
+2025-11-24 21:40:10,920 - INFO - Reading customer file
+2025-11-24 21:40:11,102 - INFO - Customer file loaded successfully with 1323 rows
+2025-11-24 21:40:11,117 - INFO - Cabinet: 494-ESD-06/X, Station: SCS0122
+2025-11-24 21:40:11,118 - INFO - Copying template file
+2025-11-24 21:40:12,469 - INFO - Renamed Front_Template to 494-ESD-06_X
+2025-11-24 21:40:12,469 - INFO - Renamed FrontLoading to SCS0122_FrontLoading
+2025-11-24 21:40:12,752 - INFO - Processing 494-ESD-06_X sheet
+2025-11-24 21:40:15,173 - INFO - Processing SCS0122_FrontLoading sheet
+2025-11-24 21:40:17,333 - INFO - Filling module details
+2025-11-24 21:40:19,410 - INFO - Filling FrontLoading details
+2025-11-24 21:40:20,701 - ERROR - Processing failed: 'ModuleDetailsFiller' object has no attribute '_fill_frontloading_details'
+2025-11-24 21:41:35,093 - INFO - Reading customer file
+2025-11-24 21:41:35,248 - INFO - Customer file loaded successfully with 1323 rows
+2025-11-24 21:41:35,248 - INFO - Cabinet: 494-ESD-06/X, Station: SCS0122
+2025-11-24 21:41:35,248 - INFO - Copying template file
+2025-11-24 21:41:36,438 - INFO - Renamed Front_Template to 494-ESD-06_X
+2025-11-24 21:41:36,438 - INFO - Renamed FrontLoading to SCS0122_FrontLoading
+2025-11-24 21:41:36,679 - INFO - Processing 494-ESD-06_X sheet
+2025-11-24 21:41:39,166 - INFO - Processing SCS0122_FrontLoading sheet
+2025-11-24 21:41:41,344 - INFO - Filling module details
+2025-11-24 21:41:42,729 - ERROR - Processing failed: invalid literal for int() with base 10: '-'
+2025-11-24 21:42:55,990 - INFO - Reading customer file
+2025-11-24 21:42:56,192 - INFO - Customer file loaded successfully with 1323 rows
+2025-11-24 21:42:56,192 - INFO - Cabinet: 494-ESD-06/X, Station: SCS0122
+2025-11-24 21:42:56,192 - INFO - Copying template file
+2025-11-24 21:42:57,375 - INFO - Renamed Front_Template to 494-ESD-06_X
+2025-11-24 21:42:57,376 - INFO - Renamed FrontLoading to SCS0122_FrontLoading
+2025-11-24 21:42:57,674 - INFO - Processing 494-ESD-06_X sheet
+2025-11-24 21:42:59,964 - INFO - Processing SCS0122_FrontLoading sheet
+2025-11-24 21:43:02,016 - INFO - Filling module details
+2025-11-24 21:43:03,494 - INFO - Filling FrontLoading details
+2025-11-24 21:43:05,662 - INFO - Writing station information
+2025-11-24 21:43:08,621 - INFO - Processing completed successfully
+2025-11-24 21:48:09,773 - INFO - Reading customer file
+2025-11-24 21:48:09,905 - INFO - Customer file loaded successfully with 1323 rows
+2025-11-24 21:48:09,905 - INFO - Cabinet: 494-ESD-06/X, Station: SCS0122
+2025-11-24 21:48:09,905 - INFO - Copying template file
+2025-11-24 21:48:10,819 - INFO - Renamed Front_Template to 494-ESD-06_X
+2025-11-24 21:48:10,819 - INFO - Renamed FrontLoading to SCS0122_FrontLoading
+2025-11-24 21:48:10,955 - INFO - Processing 494-ESD-06_X sheet
+2025-11-24 21:48:12,416 - INFO - Processing SCS0122_FrontLoading sheet
+2025-11-24 21:48:13,838 - INFO - Filling module details
+2025-11-24 21:48:15,185 - INFO - Filling FrontLoading details
+2025-11-24 21:48:16,534 - INFO - Writing station information
+2025-11-24 21:48:18,067 - INFO - Processing completed successfully
+2025-11-24 21:52:23,912 - INFO - Reading customer file
+2025-11-24 21:52:24,073 - INFO - Customer file loaded successfully with 1323 rows
+2025-11-24 21:52:24,073 - INFO - Cabinet: 494-ESD-06/X, Station: SCS0122
+2025-11-24 21:52:24,073 - INFO - Copying template file
+2025-11-24 21:52:25,207 - INFO - Renamed Front_Template to 494-ESD-06_X
+2025-11-24 21:52:25,207 - INFO - Renamed FrontLoading to SCS0122_FrontLoading
+2025-11-24 21:52:25,390 - INFO - Processing 494-ESD-06_X sheet
+2025-11-24 21:52:27,415 - INFO - Processing SCS0122_FrontLoading sheet
+2025-11-24 21:52:29,566 - INFO - Filling module details
+2025-11-24 21:52:31,379 - INFO - Filling FrontLoading details
+2025-11-24 21:52:33,134 - INFO - Writing station information
+2025-11-24 21:52:35,006 - INFO - Processing completed successfully
+2025-11-24 21:55:12,544 - INFO - Reading customer file
+2025-11-24 21:55:12,696 - INFO - Customer file loaded successfully with 1323 rows
+2025-11-24 21:55:12,696 - INFO - Cabinet: 494-ESD-06/X, Station: SCS0122
+2025-11-24 21:55:12,696 - INFO - Copying template file
+2025-11-24 21:55:13,534 - INFO - Renamed Front_Template to 494-ESD-06_X
+2025-11-24 21:55:13,534 - INFO - Renamed FrontLoading to SCS0122_FrontLoading
+2025-11-24 21:55:13,684 - INFO - Processing 494-ESD-06_X sheet
+2025-11-24 21:55:15,435 - INFO - Processing SCS0122_FrontLoading sheet
+2025-11-24 21:55:17,178 - INFO - Filling module details
+2025-11-24 21:55:18,783 - INFO - Filling FrontLoading details
+2025-11-24 21:55:20,304 - INFO - Writing station information
+2025-11-24 21:55:22,127 - INFO - Processing completed successfully
+2025-11-24 21:58:45,503 - INFO - Reading customer file
+2025-11-24 21:58:45,648 - INFO - Customer file loaded successfully with 1323 rows
+2025-11-24 21:58:45,649 - INFO - Cabinet: 494-ESD-06/X, Station: SCS0122
+2025-11-24 21:58:45,649 - INFO - Copying template file
+2025-11-24 21:58:46,516 - INFO - Renamed Front_Template to 494-ESD-06_X
+2025-11-24 21:58:46,516 - INFO - Renamed FrontLoading to SCS0122_FrontLoading
+2025-11-24 21:58:46,682 - INFO - Processing 494-ESD-06_X sheet
+2025-11-24 21:58:48,418 - INFO - Processing SCS0122_FrontLoading sheet
+2025-11-24 21:58:50,043 - INFO - Filling module details
+2025-11-24 21:58:51,702 - INFO - Filling FrontLoading details
+2025-11-24 21:58:53,236 - INFO - Writing station information
+2025-11-24 21:58:55,280 - INFO - Processing completed successfully
+2025-11-24 21:59:30,214 - INFO - Reading customer file
+2025-11-24 21:59:30,379 - INFO - Customer file loaded successfully with 1323 rows
+2025-11-24 21:59:30,379 - INFO - Cabinet: 494-ESD-06/X, Station: SCS0122
+2025-11-24 21:59:30,379 - INFO - Copying template file
+2025-11-24 21:59:31,213 - INFO - Renamed Front_Template to 494-ESD-06_X
+2025-11-24 21:59:31,214 - INFO - Renamed FrontLoading to SCS0122_FrontLoading
+2025-11-24 21:59:31,363 - INFO - Processing 494-ESD-06_X sheet
+2025-11-24 21:59:33,120 - INFO - Processing SCS0122_FrontLoading sheet
+2025-11-24 21:59:34,679 - INFO - Filling module details
+2025-11-24 21:59:36,302 - INFO - Filling FrontLoading details
+2025-11-24 21:59:37,832 - INFO - Writing station information
+2025-11-24 21:59:39,845 - INFO - Processing completed successfully
+2025-11-24 22:04:51,063 - INFO - Reading customer file
+2025-11-24 22:04:51,209 - INFO - Customer file loaded successfully with 1323 rows
+2025-11-24 22:04:51,209 - INFO - Cabinet: 494-ESD-06/X, Station: SCS0122
+2025-11-24 22:04:51,209 - INFO - Copying template file
+2025-11-24 22:04:52,026 - INFO - Renamed Front_Template to 494-ESD-06_X
+2025-11-24 22:04:52,026 - INFO - Renamed FrontLoading to SCS0122_FrontLoading
+2025-11-24 22:04:52,197 - INFO - Processing 494-ESD-06_X sheet
+2025-11-24 22:04:53,975 - INFO - Processing SCS0122_FrontLoading sheet
+2025-11-24 22:04:55,639 - INFO - Filling module details
+2025-11-24 22:04:57,228 - INFO - Filling FrontLoading details
+2025-11-24 22:04:58,744 - INFO - Writing station information
+2025-11-24 22:05:00,692 - INFO - Processing completed successfully
+2025-11-24 22:08:18,713 - INFO - Reading customer file
+2025-11-24 22:08:18,847 - INFO - Customer file loaded successfully with 1323 rows
+2025-11-24 22:08:18,847 - INFO - Cabinet: 494-ESD-06/X, Station: SCS0122
+2025-11-24 22:08:18,847 - INFO - Copying template file
+2025-11-24 22:08:19,695 - INFO - Renamed Front_Template to 494-ESD-06_X
+2025-11-24 22:08:19,695 - INFO - Renamed FrontLoading to SCS0122_FrontLoading
+2025-11-24 22:08:19,862 - INFO - Processing 494-ESD-06_X sheet
+2025-11-24 22:08:21,615 - INFO - Processing SCS0122_FrontLoading sheet
+2025-11-24 22:08:23,328 - INFO - Filling module details
+2025-11-24 22:08:24,968 - INFO - Filling FrontLoading details
+2025-11-24 22:08:26,482 - INFO - Writing station information
+2025-11-24 22:08:28,478 - INFO - Processing completed successfully
+2025-11-24 22:11:52,562 - INFO - Reading customer file
+2025-11-24 22:11:52,733 - INFO - Customer file loaded successfully with 1323 rows
+2025-11-24 22:11:52,733 - INFO - Cabinet: 494-ESD-06/X, Station: SCS0122
+2025-11-24 22:11:52,733 - INFO - Copying template file
+2025-11-24 22:11:53,684 - INFO - Renamed Front_Template to 494-ESD-06_X
+2025-11-24 22:11:53,684 - INFO - Renamed FrontLoading to SCS0122_FrontLoading
+2025-11-24 22:11:53,834 - INFO - Processing 494-ESD-06_X sheet
+2025-11-24 22:11:55,583 - INFO - Processing SCS0122_FrontLoading sheet
+2025-11-24 22:11:57,194 - INFO - Filling module details
+2025-11-24 22:11:58,840 - INFO - Filling FrontLoading details
+2025-11-24 22:12:00,313 - INFO - Writing station information
+2025-11-24 22:12:02,247 - INFO - Processing completed successfully
+2025-11-24 22:13:08,073 - INFO - Reading customer file
+2025-11-24 22:13:08,180 - INFO - Customer file loaded successfully with 1323 rows
+2025-11-24 22:13:08,194 - INFO - Cabinet: 494-ESD-06/X, Station: SCS0122
+2025-11-24 22:13:08,194 - INFO - Copying template file
+2025-11-24 22:13:08,979 - INFO - Renamed Front_Template to 494-ESD-06_X
+2025-11-24 22:13:08,979 - INFO - Renamed FrontLoading to SCS0122_FrontLoading
+2025-11-24 22:13:09,129 - INFO - Processing 494-ESD-06_X sheet
+2025-11-24 22:13:10,941 - INFO - Processing SCS0122_FrontLoading sheet
+2025-11-24 22:13:12,504 - INFO - Filling module details
+2025-11-24 22:13:14,149 - INFO - Filling FrontLoading details
+2025-11-24 22:13:15,688 - INFO - Writing station information
+2025-11-24 22:13:17,610 - INFO - Processing completed successfully
+2025-11-24 22:14:03,320 - INFO - Reading customer file
+2025-11-24 22:14:03,442 - INFO - Customer file loaded successfully with 1323 rows
+2025-11-24 22:14:03,442 - INFO - Cabinet: 494-ESD-06/X, Station: SCS0122
+2025-11-24 22:14:03,442 - INFO - Copying template file
+2025-11-24 22:14:04,292 - INFO - Renamed Front_Template to 494-ESD-06_X
+2025-11-24 22:14:04,292 - INFO - Renamed FrontLoading to SCS0122_FrontLoading
+2025-11-24 22:14:04,459 - INFO - Processing 494-ESD-06_X sheet
+2025-11-24 22:14:06,201 - INFO - Processing SCS0122_FrontLoading sheet
+2025-11-24 22:14:07,786 - INFO - Filling module details
+2025-11-24 22:14:09,380 - INFO - Filling FrontLoading details
+2025-11-24 22:14:10,937 - INFO - Writing station information
+2025-11-24 22:14:12,758 - INFO - Processing completed successfully
+2025-11-24 22:19:09,107 - INFO - Reading customer file
+2025-11-24 22:19:09,331 - INFO - Customer file loaded successfully with 1323 rows
+2025-11-24 22:19:09,331 - INFO - Cabinet: 494-ESD-06/X, Station: SCS0122
+2025-11-24 22:19:09,339 - INFO - Copying template file
+2025-11-24 22:19:11,111 - INFO - Renamed Front_Template to 494-ESD-06_X
+2025-11-24 22:19:11,111 - INFO - Renamed FrontLoading to SCS0122_FrontLoading
+2025-11-24 22:19:11,442 - INFO - Processing 494-ESD-06_X sheet
+2025-11-24 22:19:13,786 - INFO - Processing SCS0122_FrontLoading sheet
+2025-11-24 22:19:15,715 - INFO - Filling module details
+2025-11-24 22:19:17,894 - INFO - Filling FrontLoading details
+2025-11-24 22:19:19,759 - INFO - Writing station information
+2025-11-24 22:19:22,571 - INFO - Processing completed successfully
+2025-11-24 22:23:39,140 - INFO - Reading customer file
+2025-11-24 22:23:39,340 - INFO - Customer file loaded successfully with 1323 rows
+2025-11-24 22:23:39,344 - INFO - Cabinet: 494-ESD-06/X, Station: SCS0122
+2025-11-24 22:23:39,344 - INFO - Copying template file
+2025-11-24 22:23:41,015 - INFO - Renamed Front_Template to 494-ESD-06_X
+2025-11-24 22:23:41,015 - INFO - Renamed FrontLoading to SCS0122_FrontLoading
+2025-11-24 22:23:41,528 - INFO - Processing 494-ESD-06_X sheet
+2025-11-24 22:23:43,905 - INFO - Processing SCS0122_FrontLoading sheet
+2025-11-24 22:23:46,469 - INFO - Filling module details
+2025-11-24 22:23:48,620 - INFO - Filling FrontLoading details
+2025-11-24 22:23:50,456 - INFO - Writing station information
+2025-11-24 22:23:53,089 - INFO - Processing completed successfully
+2025-11-27 18:10:34,777 - INFO - Reading customer file
+2025-11-27 18:10:34,988 - INFO - Customer file loaded successfully with 1323 rows
+2025-11-27 18:10:34,988 - INFO - Cabinet: 494-ESD-06/X, Station: SCS0122
+2025-11-27 18:10:34,997 - INFO - Copying template file
+2025-11-27 18:10:36,354 - INFO - Renamed Front_Template to 494-ESD-06_X
+2025-11-27 18:10:36,354 - INFO - Renamed FrontLoading to SCS0122_FrontLoading
+2025-11-27 18:10:36,629 - INFO - Processing 494-ESD-06_X sheet
+2025-11-27 18:10:39,224 - INFO - Processing SCS0122_FrontLoading sheet
+2025-11-27 18:10:41,547 - INFO - Filling module details
+2025-11-27 18:10:43,859 - INFO - Filling FrontLoading details
+2025-11-27 18:10:46,059 - INFO - Writing station information
+2025-11-27 18:10:49,247 - INFO - Processing completed successfully
+2025-11-29 10:42:12,451 - INFO - Reading customer file
+2025-11-29 10:42:13,432 - INFO - Customer file loaded successfully with 1323 rows
+2025-11-29 10:42:13,465 - INFO - Cabinet: 494-ESD-06/X, Station: SCS0122
+2025-11-29 10:42:13,467 - INFO - Copying template file
+2025-11-29 10:42:19,858 - INFO - Renamed Front_Template to 494-ESD-06_X
+2025-11-29 10:42:19,860 - INFO - Renamed FrontLoading to SCS0122_FrontLoading
+2025-11-29 10:42:21,372 - INFO - Processing 494-ESD-06_X sheet
+2025-11-29 10:42:30,698 - INFO - Processing SCS0122_FrontLoading sheet
+2025-11-29 10:42:38,389 - INFO - Filling module details
+2025-11-29 10:42:46,062 - INFO - Filling FrontLoading details
+2025-11-29 10:42:52,088 - INFO - Writing station information
+2025-11-29 10:43:03,283 - INFO - Processing completed successfully
+2025-12-20 10:09:40,241 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1766250580.xls
+2025-12-20 10:09:41,639 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2025-12-20.xlsx
+2025-12-20 10:43:32,466 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1766252612.xls
+2025-12-20 10:43:36,362 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2025-12-20.xlsx
+2025-12-20 17:11:00,688 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1766275860.xls
+2025-12-20 17:11:01,848 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2025-12-20.xlsx
+2025-12-25 15:34:18,071 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1766702058.xls
+2025-12-25 15:34:19,708 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2025-12-25.xlsx
+2025-12-25 15:51:45,482 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1766703105.xls
+2025-12-25 15:51:46,521 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2025-12-25.xlsx
+2025-12-25 16:02:47,158 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1766703767.xls
+2025-12-25 16:02:48,202 - ERROR - Design Input Review failed: Failed to generate output file
+2025-12-25 16:04:23,623 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1766703863.xls
+2025-12-25 16:04:24,907 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2025-12-25.xlsx
+2025-12-25 16:16:27,411 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1766704587.xls
+2025-12-25 16:16:28,862 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2025-12-25.xlsx
+2025-12-25 19:08:11,991 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1766714891.xls
+2025-12-25 19:08:11,992 - INFO -   System Type: 
+2025-12-25 19:08:11,992 - INFO -   Redundancy Types: []
+2025-12-25 19:08:11,992 - INFO -   IS Types: []
+2025-12-25 19:08:11,992 - INFO -   Wired Spares %: 20.0
+2025-12-25 19:08:11,993 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1766714891.xls
+2025-12-25 19:08:11,994 - INFO -   System Type: 
+2025-12-25 19:08:11,994 - INFO -   Redundancy Types: []
+2025-12-25 19:08:11,994 - INFO -   IS Types: []
+2025-12-25 19:08:11,994 - INFO -   Wired Spares %: 20.0
+2025-12-25 19:08:15,828 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2025-12-25.xlsx
+2025-12-25 19:08:15,861 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2025-12-25.xlsx
+2025-12-25 19:19:22,605 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1766715562.xls
+2025-12-25 19:19:22,607 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1766715562.xls
+2025-12-25 19:19:22,607 - INFO -   System Type: 
+2025-12-25 19:19:22,607 - INFO -   System Type: 
+2025-12-25 19:19:22,607 - INFO -   Redundancy Types: []
+2025-12-25 19:19:22,607 - INFO -   Redundancy Types: []
+2025-12-25 19:19:22,607 - INFO -   IS Types: []
+2025-12-25 19:19:22,607 - INFO -   IS Types: []
+2025-12-25 19:19:22,607 - INFO -   Wired Spares %: 20.0
+2025-12-25 19:19:22,607 - INFO -   Wired Spares %: 20.0
+2025-12-25 19:19:24,937 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2025-12-25.xlsx
+2025-12-25 19:19:24,977 - ERROR - Design Input Review failed: Failed to generate output file
+2025-12-25 19:20:54,215 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1766715654.xls
+2025-12-25 19:20:54,215 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1766715654.xls
+2025-12-25 19:20:54,215 - INFO -   System Type: 
+2025-12-25 19:20:54,215 - INFO -   System Type: 
+2025-12-25 19:20:54,215 - INFO -   Redundancy Types: []
+2025-12-25 19:20:54,215 - INFO -   Redundancy Types: []
+2025-12-25 19:20:54,215 - INFO -   IS Types: []
+2025-12-25 19:20:54,215 - INFO -   IS Types: []
+2025-12-25 19:20:54,215 - INFO -   Wired Spares %: None
+2025-12-25 19:20:54,215 - INFO -   Wired Spares %: None
+2025-12-25 19:20:55,864 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2025-12-25.xlsx
+2025-12-25 19:20:55,871 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2025-12-25.xlsx
+2025-12-25 19:23:56,023 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1766715836.xls
+2025-12-25 19:23:56,023 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1766715836.xls
+2025-12-25 19:23:56,024 - INFO -   System Type: 
+2025-12-25 19:23:56,024 - INFO -   System Type: 
+2025-12-25 19:23:56,024 - INFO -   Redundancy Types: []
+2025-12-25 19:23:56,024 - INFO -   Redundancy Types: []
+2025-12-25 19:23:56,024 - INFO -   IS Types: []
+2025-12-25 19:23:56,025 - INFO -   IS Types: []
+2025-12-25 19:23:56,025 - INFO -   Wired Spares %: None
+2025-12-25 19:23:56,025 - INFO -   Wired Spares %: None
+2025-12-25 19:23:57,680 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2025-12-25.xlsx
+2025-12-25 19:23:57,707 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2025-12-25.xlsx
+2025-12-25 19:29:36,577 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1766716176.xls
+2025-12-25 19:29:36,577 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1766716176.xls
+2025-12-25 19:29:36,577 - INFO -   System Type: 
+2025-12-25 19:29:36,577 - INFO -   System Type: 
+2025-12-25 19:29:36,577 - INFO -   Redundancy Types: []
+2025-12-25 19:29:36,578 - INFO -   Redundancy Types: []
+2025-12-25 19:29:36,578 - INFO -   IS Types: []
+2025-12-25 19:29:36,578 - INFO -   IS Types: []
+2025-12-25 19:29:36,578 - INFO -   Wired Spares %: None
+2025-12-25 19:29:36,579 - INFO -   Wired Spares %: None
+2025-12-25 19:29:38,082 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2025-12-25.xlsx
+2025-12-25 19:29:38,104 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2025-12-25.xlsx
+2025-12-25 19:36:41,960 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1766716601.xls
+2025-12-25 19:36:41,960 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1766716601.xls
+2025-12-25 19:36:41,960 - INFO -   System Type: 
+2025-12-25 19:36:41,960 - INFO -   System Type: 
+2025-12-25 19:36:41,960 - INFO -   Redundancy Types: []
+2025-12-25 19:36:41,960 - INFO -   Redundancy Types: []
+2025-12-25 19:36:41,960 - INFO -   IS Types: []
+2025-12-25 19:36:41,960 - INFO -   IS Types: []
+2025-12-25 19:36:41,960 - INFO -   Wired Spares %: None
+2025-12-25 19:36:41,960 - INFO -   Wired Spares %: None
+2025-12-25 19:36:43,839 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2025-12-25.xlsx
+2025-12-25 19:36:43,858 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2025-12-25.xlsx
+2025-12-25 19:43:03,927 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1766716983.xls
+2025-12-25 19:43:03,928 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1766716983.xls
+2025-12-25 19:43:03,929 - INFO -   System Type: 
+2025-12-25 19:43:03,929 - INFO -   System Type: 
+2025-12-25 19:43:03,929 - INFO -   Redundancy Types: []
+2025-12-25 19:43:03,929 - INFO -   Redundancy Types: []
+2025-12-25 19:43:03,929 - INFO -   IS Types: []
+2025-12-25 19:43:03,930 - INFO -   IS Types: []
+2025-12-25 19:43:03,930 - INFO -   Wired Spares %: 20.0
+2025-12-25 19:43:03,930 - INFO -   Wired Spares %: 20.0
+2025-12-25 19:43:05,765 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2025-12-25.xlsx
+2025-12-25 19:43:05,774 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2025-12-25.xlsx
+2025-12-25 19:46:06,415 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1766717166.xls
+2025-12-25 19:46:06,416 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1766717166.xls
+2025-12-25 19:46:06,416 - INFO -   System Type: 
+2025-12-25 19:46:06,417 - INFO -   System Type: 
+2025-12-25 19:46:06,417 - INFO -   Redundancy Types: []
+2025-12-25 19:46:06,417 - INFO -   Redundancy Types: []
+2025-12-25 19:46:06,417 - INFO -   IS Types: []
+2025-12-25 19:46:06,419 - INFO -   IS Types: []
+2025-12-25 19:46:06,419 - INFO -   Wired Spares %: 20.0
+2025-12-25 19:46:06,419 - INFO -   Wired Spares %: 20.0
+2025-12-25 19:46:08,290 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2025-12-25.xlsx
+2025-12-25 19:46:08,310 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2025-12-25.xlsx
+2025-12-25 19:46:59,951 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1766717219.xls
+2025-12-25 19:46:59,951 - INFO -   System Type: 
+2025-12-25 19:46:59,951 - INFO -   Redundancy Types: []
+2025-12-25 19:46:59,951 - INFO -   IS Types: []
+2025-12-25 19:46:59,951 - INFO -   Wired Spares %: None
+2025-12-25 19:46:59,951 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1766717219.xls
+2025-12-25 19:46:59,951 - INFO -   System Type: 
+2025-12-25 19:46:59,959 - INFO -   Redundancy Types: []
+2025-12-25 19:46:59,959 - INFO -   IS Types: []
+2025-12-25 19:46:59,959 - INFO -   Wired Spares %: None
+2025-12-25 19:47:01,817 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2025-12-25.xlsx
+2025-12-25 19:47:01,840 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2025-12-25.xlsx
+2025-12-25 19:53:55,741 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1766717635.xls
+2025-12-25 19:53:55,741 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1766717635.xls
+2025-12-25 19:53:55,741 - INFO -   System Type: 
+2025-12-25 19:53:55,741 - INFO -   System Type: 
+2025-12-25 19:53:55,741 - INFO -   Redundancy Types: []
+2025-12-25 19:53:55,741 - INFO -   Redundancy Types: []
+2025-12-25 19:53:55,741 - INFO -   IS Types: []
+2025-12-25 19:53:55,741 - INFO -   IS Types: []
+2025-12-25 19:53:55,741 - INFO -   Wired Spares %: None
+2025-12-25 19:53:55,741 - INFO -   Wired Spares %: None
+2025-12-25 19:53:57,577 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2025-12-25.xlsx
+2025-12-25 19:53:57,597 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2025-12-25.xlsx
+2025-12-25 19:59:19,477 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1766717959.xls
+2025-12-25 19:59:19,478 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1766717959.xls
+2025-12-25 19:59:19,478 - INFO -   System Type: 
+2025-12-25 19:59:19,478 - INFO -   System Type: 
+2025-12-25 19:59:19,479 - INFO -   Redundancy Types: []
+2025-12-25 19:59:19,479 - INFO -   Redundancy Types: []
+2025-12-25 19:59:19,479 - INFO -   IS Types: []
+2025-12-25 19:59:19,479 - INFO -   IS Types: []
+2025-12-25 19:59:19,480 - INFO -   Wired Spares %: 15.0
+2025-12-25 19:59:19,480 - INFO -   Wired Spares %: 15.0
+2025-12-25 19:59:21,519 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2025-12-25.xlsx
+2025-12-25 19:59:21,525 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2025-12-25.xlsx
+2025-12-25 20:02:17,107 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1766718137.xls
+2025-12-25 20:02:17,107 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1766718137.xls
+2025-12-25 20:02:17,109 - INFO -   System Type: 
+2025-12-25 20:02:17,109 - INFO -   System Type: 
+2025-12-25 20:02:17,109 - INFO -   Redundancy Types: []
+2025-12-25 20:02:17,109 - INFO -   Redundancy Types: []
+2025-12-25 20:02:17,110 - INFO -   IS Types: []
+2025-12-25 20:02:17,110 - INFO -   IS Types: []
+2025-12-25 20:02:17,110 - INFO -   Wired Spares %: 20.0
+2025-12-25 20:02:17,110 - INFO -   Wired Spares %: 20.0
+2025-12-25 20:02:18,808 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2025-12-25.xlsx
+2025-12-25 20:02:18,847 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2025-12-25.xlsx
+2025-12-25 20:04:22,256 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1766718262.xls
+2025-12-25 20:04:22,256 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1766718262.xls
+2025-12-25 20:04:22,256 - INFO -   System Type: 
+2025-12-25 20:04:22,256 - INFO -   System Type: 
+2025-12-25 20:04:22,257 - INFO -   Redundancy Types: []
+2025-12-25 20:04:22,257 - INFO -   Redundancy Types: []
+2025-12-25 20:04:22,257 - INFO -   IS Types: []
+2025-12-25 20:04:22,257 - INFO -   IS Types: []
+2025-12-25 20:04:22,257 - INFO -   Wired Spares %: None
+2025-12-25 20:04:22,257 - INFO -   Wired Spares %: None
+2025-12-25 20:04:23,968 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2025-12-25.xlsx
+2025-12-25 20:04:23,992 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2025-12-25.xlsx
+2025-12-25 20:04:51,826 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1766718291.xls
+2025-12-25 20:04:51,826 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1766718291.xls
+2025-12-25 20:04:51,826 - INFO -   System Type: 
+2025-12-25 20:04:51,827 - INFO -   System Type: 
+2025-12-25 20:04:51,827 - INFO -   Redundancy Types: []
+2025-12-25 20:04:51,827 - INFO -   Redundancy Types: []
+2025-12-25 20:04:51,827 - INFO -   IS Types: []
+2025-12-25 20:04:51,827 - INFO -   IS Types: []
+2025-12-25 20:04:51,828 - INFO -   Wired Spares %: 20.0
+2025-12-25 20:04:51,828 - INFO -   Wired Spares %: 20.0
+2025-12-25 20:04:53,750 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2025-12-25.xlsx
+2025-12-25 20:04:53,764 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2025-12-25.xlsx
+2025-12-25 23:15:39,381 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1766729739.xls
+2025-12-25 23:15:39,381 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1766729739.xls
+2025-12-25 23:15:39,383 - INFO -   System Type: 
+2025-12-25 23:15:39,383 - INFO -   System Type: 
+2025-12-25 23:15:39,383 - INFO -   Redundancy Types: []
+2025-12-25 23:15:39,383 - INFO -   Redundancy Types: []
+2025-12-25 23:15:39,383 - INFO -   IS Types: []
+2025-12-25 23:15:39,383 - INFO -   IS Types: []
+2025-12-25 23:15:39,383 - INFO -   Wired Spares %: None
+2025-12-25 23:15:39,385 - INFO -   Wired Spares %: None
+2025-12-25 23:15:41,797 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2025-12-25.xlsx
+2025-12-25 23:15:41,812 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2025-12-25.xlsx
+2025-12-25 23:16:55,726 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1766729815.xls
+2025-12-25 23:16:55,726 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1766729815.xls
+2025-12-25 23:16:55,726 - INFO -   System Type: 
+2025-12-25 23:16:55,728 - INFO -   System Type: 
+2025-12-25 23:16:55,728 - INFO -   Redundancy Types: []
+2025-12-25 23:16:55,728 - INFO -   Redundancy Types: []
+2025-12-25 23:16:55,728 - INFO -   IS Types: []
+2025-12-25 23:16:55,728 - INFO -   IS Types: []
+2025-12-25 23:16:55,728 - INFO -   Wired Spares %: 20.0
+2025-12-25 23:16:55,728 - INFO -   Wired Spares %: 20.0
+2025-12-25 23:16:58,494 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2025-12-25.xlsx
+2025-12-25 23:16:58,513 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2025-12-25.xlsx
+2025-12-25 23:18:22,644 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1766729902.xls
+2025-12-25 23:18:22,644 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1766729902.xls
+2025-12-25 23:18:22,644 - INFO -   System Type: 
+2025-12-25 23:18:22,646 - INFO -   System Type: 
+2025-12-25 23:18:22,646 - INFO -   Redundancy Types: []
+2025-12-25 23:18:22,646 - INFO -   Redundancy Types: []
+2025-12-25 23:18:22,646 - INFO -   IS Types: []
+2025-12-25 23:18:22,647 - INFO -   IS Types: []
+2025-12-25 23:18:22,647 - INFO -   Wired Spares %: 20.0
+2025-12-25 23:18:22,647 - INFO -   Wired Spares %: 20.0
+2025-12-25 23:18:24,454 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2025-12-25.xlsx
+2025-12-25 23:18:24,480 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2025-12-25.xlsx
+2025-12-25 23:23:39,946 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1766730219.xls
+2025-12-25 23:23:39,946 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1766730219.xls
+2025-12-25 23:23:39,946 - INFO -   System Type: 
+2025-12-25 23:23:39,946 - INFO -   System Type: 
+2025-12-25 23:23:39,946 - INFO -   Redundancy Types: []
+2025-12-25 23:23:39,947 - INFO -   Redundancy Types: []
+2025-12-25 23:23:39,947 - INFO -   IS Types: []
+2025-12-25 23:23:39,947 - INFO -   IS Types: []
+2025-12-25 23:23:39,947 - INFO -   Wired Spares %: 20.0
+2025-12-25 23:23:39,947 - INFO -   Wired Spares %: 20.0
+2025-12-25 23:23:41,468 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2025-12-25.xlsx
+2025-12-25 23:23:41,493 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2025-12-25.xlsx
+2025-12-25 23:30:34,789 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1766730634.xls
+2025-12-25 23:30:34,790 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1766730634.xls
+2025-12-25 23:30:34,790 - INFO -   System Type: 
+2025-12-25 23:30:34,791 - INFO -   System Type: 
+2025-12-25 23:30:34,791 - INFO -   Redundancy Types: []
+2025-12-25 23:30:34,791 - INFO -   Redundancy Types: []
+2025-12-25 23:30:34,791 - INFO -   IS Types: []
+2025-12-25 23:30:34,792 - INFO -   IS Types: []
+2025-12-25 23:30:34,792 - INFO -   Wired Spares %: 20.0
+2025-12-25 23:30:34,792 - INFO -   Wired Spares %: 20.0
+2025-12-25 23:30:36,440 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2025-12-25.xlsx
+2025-12-25 23:30:36,458 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2025-12-25.xlsx
+2025-12-25 23:39:06,274 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1766731146.xls
+2025-12-25 23:39:06,274 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1766731146.xls
+2025-12-25 23:39:06,274 - INFO -   System Type: 
+2025-12-25 23:39:06,275 - INFO -   System Type: 
+2025-12-25 23:39:06,275 - INFO -   Redundancy Types: []
+2025-12-25 23:39:06,276 - INFO -   Redundancy Types: []
+2025-12-25 23:39:06,276 - INFO -   IS Types: []
+2025-12-25 23:39:06,276 - INFO -   IS Types: []
+2025-12-25 23:39:06,276 - INFO -   Wired Spares %: 10.0
+2025-12-25 23:39:06,276 - INFO -   Wired Spares %: 10.0
+2025-12-25 23:39:07,848 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2025-12-25.xlsx
+2025-12-25 23:39:07,858 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2025-12-25.xlsx
+2025-12-25 23:40:03,022 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1766731203.xls
+2025-12-25 23:40:03,022 - INFO -   System Type: 
+2025-12-25 23:40:03,022 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1766731203.xls
+2025-12-25 23:40:03,022 - INFO -   Redundancy Types: []
+2025-12-25 23:40:03,022 - INFO -   System Type: 
+2025-12-25 23:40:03,022 - INFO -   IS Types: []
+2025-12-25 23:40:03,022 - INFO -   Redundancy Types: []
+2025-12-25 23:40:03,022 - INFO -   Wired Spares %: 25.0
+2025-12-25 23:40:03,022 - INFO -   IS Types: []
+2025-12-25 23:40:03,022 - INFO -   Wired Spares %: 25.0
+2025-12-25 23:40:04,972 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2025-12-25.xlsx
+2025-12-25 23:40:04,972 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2025-12-25.xlsx
+2025-12-25 23:40:34,493 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1766731234.xls
+2025-12-25 23:40:34,493 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1766731234.xls
+2025-12-25 23:40:34,493 - INFO -   System Type: 
+2025-12-25 23:40:34,494 - INFO -   System Type: 
+2025-12-25 23:40:34,494 - INFO -   Redundancy Types: []
+2025-12-25 23:40:34,494 - INFO -   Redundancy Types: []
+2025-12-25 23:40:34,494 - INFO -   IS Types: []
+2025-12-25 23:40:34,494 - INFO -   IS Types: []
+2025-12-25 23:40:34,494 - INFO -   Wired Spares %: 10.0
+2025-12-25 23:40:34,494 - INFO -   Wired Spares %: 10.0
+2025-12-25 23:40:36,202 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2025-12-25.xlsx
+2025-12-25 23:40:36,237 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2025-12-25.xlsx
+2025-12-25 23:41:04,093 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1766731264.xls
+2025-12-25 23:41:04,094 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1766731264.xls
+2025-12-25 23:41:04,094 - INFO -   System Type: 
+2025-12-25 23:41:04,095 - INFO -   System Type: 
+2025-12-25 23:41:04,095 - INFO -   Redundancy Types: []
+2025-12-25 23:41:04,095 - INFO -   Redundancy Types: []
+2025-12-25 23:41:04,095 - INFO -   IS Types: []
+2025-12-25 23:41:04,095 - INFO -   IS Types: []
+2025-12-25 23:41:04,095 - INFO -   Wired Spares %: 20.0
+2025-12-25 23:41:04,096 - INFO -   Wired Spares %: 20.0
+2025-12-25 23:41:05,918 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2025-12-25.xlsx
+2025-12-25 23:41:05,926 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2025-12-25.xlsx
+2025-12-25 23:44:48,151 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1766731488.xls
+2025-12-25 23:44:48,151 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1766731488.xls
+2025-12-25 23:44:48,152 - INFO -   System Type: 
+2025-12-25 23:44:48,152 - INFO -   System Type: 
+2025-12-25 23:44:48,152 - INFO -   Redundancy Types: []
+2025-12-25 23:44:48,152 - INFO -   Redundancy Types: []
+2025-12-25 23:44:48,152 - INFO -   IS Types: []
+2025-12-25 23:44:48,152 - INFO -   IS Types: []
+2025-12-25 23:44:48,152 - INFO -   Wired Spares %: 15.0
+2025-12-25 23:44:48,153 - INFO -   Wired Spares %: 15.0
+2025-12-25 23:44:49,909 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2025-12-25.xlsx
+2025-12-25 23:44:49,926 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2025-12-25.xlsx
+2025-12-25 23:48:03,254 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1766731683.xls
+2025-12-25 23:48:03,254 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1766731683.xls
+2025-12-25 23:48:03,255 - INFO -   System Type: 
+2025-12-25 23:48:03,255 - INFO -   System Type: 
+2025-12-25 23:48:03,255 - INFO -   Redundancy Types: []
+2025-12-25 23:48:03,255 - INFO -   Redundancy Types: []
+2025-12-25 23:48:03,256 - INFO -   IS Types: []
+2025-12-25 23:48:03,256 - INFO -   IS Types: []
+2025-12-25 23:48:03,256 - INFO -   Wired Spares %: 10.0
+2025-12-25 23:48:03,256 - INFO -   Wired Spares %: 10.0
+2025-12-25 23:48:04,843 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2025-12-25.xlsx
+2025-12-25 23:48:04,891 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2025-12-25.xlsx
+2025-12-25 23:51:32,187 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1766731892.xls
+2025-12-25 23:51:32,188 - INFO -   System Type: 
+2025-12-25 23:51:32,188 - INFO -   Redundancy Types: []
+2025-12-25 23:51:32,188 - INFO -   IS Types: []
+2025-12-25 23:51:32,189 - INFO -   Wired Spares %: 15.0
+2025-12-25 23:51:32,190 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1766731892.xls
+2025-12-25 23:51:32,190 - INFO -   System Type: 
+2025-12-25 23:51:32,191 - INFO -   Redundancy Types: []
+2025-12-25 23:51:32,191 - INFO -   IS Types: []
+2025-12-25 23:51:32,191 - INFO -   Wired Spares %: 15.0
+2025-12-25 23:51:34,962 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2025-12-25.xlsx
+2025-12-25 23:51:34,996 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2025-12-25.xlsx
+2025-12-25 23:53:49,664 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1766732029.xls
+2025-12-25 23:53:49,664 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1766732029.xls
+2025-12-25 23:53:49,664 - INFO -   System Type: 
+2025-12-25 23:53:49,665 - INFO -   System Type: 
+2025-12-25 23:53:49,665 - INFO -   Redundancy Types: []
+2025-12-25 23:53:49,665 - INFO -   Redundancy Types: []
+2025-12-25 23:53:49,665 - INFO -   IS Types: []
+2025-12-25 23:53:49,665 - INFO -   IS Types: []
+2025-12-25 23:53:49,666 - INFO -   Wired Spares %: 20.0
+2025-12-25 23:53:49,666 - INFO -   Wired Spares %: 20.0
+2025-12-25 23:53:51,754 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2025-12-25.xlsx
+2025-12-25 23:53:51,754 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2025-12-25.xlsx
+2025-12-25 23:55:37,847 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1766732137.xls
+2025-12-25 23:55:37,847 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1766732137.xls
+2025-12-25 23:55:37,847 - INFO -   System Type: 
+2025-12-25 23:55:37,847 - INFO -   System Type: 
+2025-12-25 23:55:37,847 - INFO -   Redundancy Types: []
+2025-12-25 23:55:37,847 - INFO -   Redundancy Types: []
+2025-12-25 23:55:37,847 - INFO -   IS Types: []
+2025-12-25 23:55:37,847 - INFO -   IS Types: []
+2025-12-25 23:55:37,847 - INFO -   Wired Spares %: 15.0
+2025-12-25 23:55:37,847 - INFO -   Wired Spares %: 15.0
+2025-12-25 23:55:39,882 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2025-12-25.xlsx
+2025-12-25 23:55:39,889 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2025-12-25.xlsx
+2025-12-25 23:58:52,835 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1766732332.xls
+2025-12-25 23:58:52,835 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1766732332.xls
+2025-12-25 23:58:52,835 - INFO -   System Type: 
+2025-12-25 23:58:52,835 - INFO -   System Type: 
+2025-12-25 23:58:52,835 - INFO -   Redundancy Types: []
+2025-12-25 23:58:52,835 - INFO -   Redundancy Types: []
+2025-12-25 23:58:52,835 - INFO -   IS Types: []
+2025-12-25 23:58:52,835 - INFO -   IS Types: []
+2025-12-25 23:58:52,835 - INFO -   Wired Spares %: 20.0
+2025-12-25 23:58:52,835 - INFO -   Wired Spares %: 20.0
+2025-12-25 23:58:56,833 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2025-12-25.xlsx
+2025-12-25 23:58:56,852 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2025-12-25.xlsx
+2025-12-27 10:48:41,436 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1766857721.xls
+2025-12-27 10:48:41,438 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1766857721.xls
+2025-12-27 10:48:41,439 - INFO -   System Type: 
+2025-12-27 10:48:41,442 - INFO -   System Type: 
+2025-12-27 10:48:41,442 - INFO -   Redundancy Types: []
+2025-12-27 10:48:41,443 - INFO -   Redundancy Types: []
+2025-12-27 10:48:41,444 - INFO -   IS Types: []
+2025-12-27 10:48:41,445 - INFO -   IS Types: []
+2025-12-27 10:48:41,446 - INFO -   Wired Spares %: 20.0
+2025-12-27 10:48:41,455 - INFO -   Wired Spares %: 20.0
+2025-12-27 10:48:49,285 - ERROR - Design Input Review failed: Failed to generate output file
+2025-12-27 10:48:49,535 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2025-12-27.xlsx
