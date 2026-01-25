@@ -769,3 +769,15 @@
 2025-12-27 10:48:41,455 - INFO -   Wired Spares %: 20.0
 2025-12-27 10:48:49,285 - ERROR - Design Input Review failed: Failed to generate output file
 2025-12-27 10:48:49,535 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2025-12-27.xlsx
+2026-01-25 13:48:55,630 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1769366935.xls
+2026-01-25 13:48:55,630 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1769366935.xls
+2026-01-25 13:48:55,630 - INFO -   System Type: 
+2026-01-25 13:48:55,630 - INFO -   System Type: 
+2026-01-25 13:48:55,630 - INFO -   Redundancy Types: []
+2026-01-25 13:48:55,630 - INFO -   Redundancy Types: []
+2026-01-25 13:48:55,630 - INFO -   IS Types: []
+2026-01-25 13:48:55,630 - INFO -   IS Types: []
+2026-01-25 13:48:55,630 - INFO -   Wired Spares %: 20.0
+2026-01-25 13:48:55,630 - INFO -   Wired Spares %: 20.0
+2026-01-25 13:48:59,160 - ERROR - Design Input Review failed: Failed to generate output file
+2026-01-25 13:48:59,200 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2026-01-25.xlsx
