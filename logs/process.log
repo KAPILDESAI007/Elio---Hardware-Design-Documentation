@@ -781,3 +781,183 @@
 2026-01-25 13:48:55,630 - INFO -   Wired Spares %: 20.0
 2026-01-25 13:48:59,160 - ERROR - Design Input Review failed: Failed to generate output file
 2026-01-25 13:48:59,200 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2026-01-25.xlsx
+2026-01-25 17:24:36,361 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1769379876.xls
+2026-01-25 17:24:36,361 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1769379876.xls
+2026-01-25 17:24:36,361 - INFO -   System Type: 
+2026-01-25 17:24:36,361 - INFO -   System Type: 
+2026-01-25 17:24:36,361 - INFO -   Controller Model: SCS60D
+2026-01-25 17:24:36,361 - INFO -   Controller Model: SCS60D
+2026-01-25 17:24:36,361 - INFO -   Explosion Protection: Yes
+2026-01-25 17:24:36,361 - INFO -   Explosion Protection: Yes
+2026-01-25 17:24:36,361 - INFO -   Temperature Rating: Wide
+2026-01-25 17:24:36,361 - INFO -   Temperature Rating: Wide
+2026-01-25 17:24:36,361 - INFO -   Redundancy Types: []
+2026-01-25 17:24:36,361 - INFO -   Redundancy Types: []
+2026-01-25 17:24:36,361 - INFO -   IS Types: []
+2026-01-25 17:24:36,361 - INFO -   IS Types: []
+2026-01-25 17:24:36,361 - INFO -   Wired Spares %: 20.0
+2026-01-25 17:24:36,361 - INFO -   Wired Spares %: 20.0
+2026-01-25 17:24:39,795 - ERROR - Design Input Review failed: Failed to generate output file
+2026-01-25 17:24:39,951 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2026-01-25.xlsx
+2026-01-25 19:07:39,237 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1769386059.xls
+2026-01-25 19:07:39,237 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1769386059.xls
+2026-01-25 19:07:39,237 - INFO -   System Type: 
+2026-01-25 19:07:39,238 - INFO -   System Type: 
+2026-01-25 19:07:39,238 - INFO -   Controller Model: SCS60D
+2026-01-25 19:07:39,238 - INFO -   Controller Model: SCS60D
+2026-01-25 19:07:39,238 - INFO -   Explosion Protection: Yes
+2026-01-25 19:07:39,239 - INFO -   Explosion Protection: Yes
+2026-01-25 19:07:39,239 - INFO -   Temperature Rating: Wide
+2026-01-25 19:07:39,239 - INFO -   Temperature Rating: Wide
+2026-01-25 19:07:39,240 - INFO -   Redundancy Types: []
+2026-01-25 19:07:39,240 - INFO -   Redundancy Types: []
+2026-01-25 19:07:39,240 - INFO -   IS Types: []
+2026-01-25 19:07:39,240 - INFO -   IS Types: []
+2026-01-25 19:07:39,240 - INFO -   Wired Spares %: 20.0
+2026-01-25 19:07:39,240 - INFO -   Wired Spares %: 20.0
+2026-01-25 19:07:43,939 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2026-01-25.xlsx
+2026-01-25 19:07:43,947 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2026-01-25.xlsx
+2026-01-25 19:43:01,662 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1769388181.xls
+2026-01-25 19:43:01,662 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1769388181.xls
+2026-01-25 19:43:01,662 - INFO -   System Type: 
+2026-01-25 19:43:01,662 - INFO -   System Type: 
+2026-01-25 19:43:01,662 - INFO -   Controller Model: SCS60D
+2026-01-25 19:43:01,662 - INFO -   Controller Model: SCS60D
+2026-01-25 19:43:01,662 - INFO -   Explosion Protection: Yes
+2026-01-25 19:43:01,662 - INFO -   Explosion Protection: Yes
+2026-01-25 19:43:01,662 - INFO -   Temperature Rating: Wide
+2026-01-25 19:43:01,662 - INFO -   Temperature Rating: Wide
+2026-01-25 19:43:01,662 - INFO -   Redundancy Types: []
+2026-01-25 19:43:01,662 - INFO -   Redundancy Types: []
+2026-01-25 19:43:01,662 - INFO -   IS Types: []
+2026-01-25 19:43:01,662 - INFO -   IS Types: []
+2026-01-25 19:43:01,662 - INFO -   Wired Spares %: 20.0
+2026-01-25 19:43:01,662 - INFO -   Wired Spares %: 20.0
+2026-01-25 19:43:05,126 - ERROR - Design Input Review failed: Failed to generate output file
+2026-01-25 19:43:05,758 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2026-01-25.xlsx
+2026-01-25 19:55:06,343 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1769388906.xls
+2026-01-25 19:55:06,344 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1769388906.xls
+2026-01-25 19:55:06,344 - INFO -   System Type: 
+2026-01-25 19:55:06,344 - INFO -   System Type: 
+2026-01-25 19:55:06,344 - INFO -   Controller Model: SCS60D
+2026-01-25 19:55:06,345 - INFO -   Controller Model: SCS60D
+2026-01-25 19:55:06,345 - INFO -   Explosion Protection: Yes
+2026-01-25 19:55:06,345 - INFO -   Explosion Protection: Yes
+2026-01-25 19:55:06,345 - INFO -   Temperature Rating: Wide
+2026-01-25 19:55:06,346 - INFO -   Temperature Rating: Wide
+2026-01-25 19:55:06,346 - INFO -   Redundancy Types: []
+2026-01-25 19:55:06,346 - INFO -   Redundancy Types: []
+2026-01-25 19:55:06,347 - INFO -   IS Types: []
+2026-01-25 19:55:06,347 - INFO -   IS Types: []
+2026-01-25 19:55:06,347 - INFO -   Wired Spares %: 20.0
+2026-01-25 19:55:06,347 - INFO -   Wired Spares %: 20.0
+2026-01-25 19:55:09,077 - ERROR - Design Input Review failed: Failed to generate output file
+2026-01-25 19:55:09,503 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2026-01-25.xlsx
+2026-01-25 20:03:20,865 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1769389400.xls
+2026-01-25 20:03:20,867 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1769389400.xls
+2026-01-25 20:03:20,867 - INFO -   System Type: 
+2026-01-25 20:03:20,867 - INFO -   System Type: 
+2026-01-25 20:03:20,868 - INFO -   Controller Model: SCS60D
+2026-01-25 20:03:20,868 - INFO -   Controller Model: SCS60D
+2026-01-25 20:03:20,868 - INFO -   Explosion Protection: Yes
+2026-01-25 20:03:20,868 - INFO -   Explosion Protection: Yes
+2026-01-25 20:03:20,868 - INFO -   Temperature Rating: Wide
+2026-01-25 20:03:20,868 - INFO -   Temperature Rating: Wide
+2026-01-25 20:03:20,868 - INFO -   Redundancy Types: []
+2026-01-25 20:03:20,868 - INFO -   Redundancy Types: []
+2026-01-25 20:03:20,868 - INFO -   IS Types: []
+2026-01-25 20:03:20,868 - INFO -   IS Types: []
+2026-01-25 20:03:20,868 - INFO -   Wired Spares %: 15.0
+2026-01-25 20:03:20,868 - INFO -   Wired Spares %: 15.0
+2026-01-25 20:03:23,894 - ERROR - Design Input Review failed: Failed to generate output file
+2026-01-25 20:03:24,168 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2026-01-25.xlsx
+2026-01-25 20:09:58,476 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1769389798.xls
+2026-01-25 20:09:58,476 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1769389798.xls
+2026-01-25 20:09:58,476 - INFO -   System Type: 
+2026-01-25 20:09:58,478 - INFO -   System Type: 
+2026-01-25 20:09:58,478 - INFO -   Controller Model: SCS60D
+2026-01-25 20:09:58,478 - INFO -   Controller Model: SCS60D
+2026-01-25 20:09:58,478 - INFO -   Explosion Protection: No
+2026-01-25 20:09:58,479 - INFO -   Explosion Protection: No
+2026-01-25 20:09:58,479 - INFO -   Temperature Rating: Standard
+2026-01-25 20:09:58,480 - INFO -   Temperature Rating: Standard
+2026-01-25 20:09:58,480 - INFO -   Redundancy Types: []
+2026-01-25 20:09:58,482 - INFO -   Redundancy Types: []
+2026-01-25 20:09:58,482 - INFO -   IS Types: []
+2026-01-25 20:09:58,482 - INFO -   IS Types: []
+2026-01-25 20:09:58,483 - INFO -   Wired Spares %: 20.0
+2026-01-25 20:09:58,483 - INFO -   Wired Spares %: 20.0
+2026-01-25 20:10:01,983 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2026-01-25.xlsx
+2026-01-25 20:10:01,995 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2026-01-25.xlsx
+2026-01-25 20:13:53,045 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1769390033.xls
+2026-01-25 20:13:53,045 - INFO -   System Type: 
+2026-01-25 20:13:53,045 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1769390033.xls
+2026-01-25 20:13:53,045 - INFO -   Controller Model: SCS60D
+2026-01-25 20:13:53,045 - INFO -   System Type: 
+2026-01-25 20:13:53,045 - INFO -   Explosion Protection: No
+2026-01-25 20:13:53,045 - INFO -   Controller Model: SCS60D
+2026-01-25 20:13:53,045 - INFO -   Temperature Rating: Standard
+2026-01-25 20:13:53,045 - INFO -   Explosion Protection: No
+2026-01-25 20:13:53,045 - INFO -   Redundancy Types: []
+2026-01-25 20:13:53,045 - INFO -   Temperature Rating: Standard
+2026-01-25 20:13:53,045 - INFO -   IS Types: []
+2026-01-25 20:13:53,045 - INFO -   Redundancy Types: []
+2026-01-25 20:13:53,045 - INFO -   Wired Spares %: 20.0
+2026-01-25 20:13:53,045 - INFO -   IS Types: []
+2026-01-25 20:13:53,045 - INFO -   Wired Spares %: 20.0
+2026-01-25 20:13:56,640 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2026-01-25.xlsx
+2026-01-25 20:13:56,646 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2026-01-25.xlsx
+2026-01-25 20:15:49,814 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1769390149.xls
+2026-01-25 20:15:49,815 - INFO -   System Type: 
+2026-01-25 20:15:49,815 - INFO -   Controller Model: SCS60D
+2026-01-25 20:15:49,815 - INFO -   Explosion Protection: No
+2026-01-25 20:15:49,816 - INFO -   Temperature Rating: Standard
+2026-01-25 20:15:49,816 - INFO -   Redundancy Types: []
+2026-01-25 20:15:49,816 - INFO -   IS Types: []
+2026-01-25 20:15:49,817 - INFO -   Wired Spares %: 20.0
+2026-01-25 20:15:49,818 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1769390149.xls
+2026-01-25 20:15:49,818 - INFO -   System Type: 
+2026-01-25 20:15:49,818 - INFO -   Controller Model: SCS60D
+2026-01-25 20:15:49,819 - INFO -   Explosion Protection: No
+2026-01-25 20:15:49,819 - INFO -   Temperature Rating: Standard
+2026-01-25 20:15:49,820 - INFO -   Redundancy Types: []
+2026-01-25 20:15:49,820 - INFO -   IS Types: []
+2026-01-25 20:15:49,820 - INFO -   Wired Spares %: 20.0
+2026-01-25 20:15:53,160 - ERROR - Design Input Review failed: Failed to generate output file
+2026-01-25 20:15:53,461 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2026-01-25.xlsx
+2026-01-25 20:17:59,413 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1769390279.xls
+2026-01-25 20:17:59,413 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1769390279.xls
+2026-01-25 20:17:59,413 - INFO -   System Type: 
+2026-01-25 20:17:59,413 - INFO -   System Type: 
+2026-01-25 20:17:59,413 - INFO -   Controller Model: SCS60D
+2026-01-25 20:17:59,413 - INFO -   Controller Model: SCS60D
+2026-01-25 20:17:59,413 - INFO -   Explosion Protection: No
+2026-01-25 20:17:59,413 - INFO -   Explosion Protection: No
+2026-01-25 20:17:59,413 - INFO -   Temperature Rating: Standard
+2026-01-25 20:17:59,413 - INFO -   Temperature Rating: Standard
+2026-01-25 20:17:59,413 - INFO -   Redundancy Types: []
+2026-01-25 20:17:59,413 - INFO -   Redundancy Types: []
+2026-01-25 20:17:59,413 - INFO -   IS Types: []
+2026-01-25 20:17:59,413 - INFO -   IS Types: []
+2026-01-25 20:17:59,413 - INFO -   Wired Spares %: 20.0
+2026-01-25 20:17:59,413 - INFO -   Wired Spares %: 20.0
+2026-01-25 20:18:03,088 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2026-01-25.xlsx
+2026-01-25 20:18:03,089 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2026-01-25.xlsx
+2026-01-25 23:16:28,796 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1769400988.xls
+2026-01-25 23:16:28,797 - INFO - Starting Design Input Review with file: C:\Working\Others\Python\Cloud App Projects\uploads\design_input_1769400988.xls
+2026-01-25 23:16:28,797 - INFO -   System Type: 
+2026-01-25 23:16:28,798 - INFO -   System Type: 
+2026-01-25 23:16:28,798 - INFO -   Controller Model: SCS60D
+2026-01-25 23:16:28,798 - INFO -   Controller Model: SCS60D
+2026-01-25 23:16:28,798 - INFO -   Explosion Protection: No
+2026-01-25 23:16:28,798 - INFO -   Explosion Protection: No
+2026-01-25 23:16:28,798 - INFO -   Temperature Rating: Standard
+2026-01-25 23:16:28,798 - INFO -   Temperature Rating: Standard
+2026-01-25 23:16:28,804 - INFO -   Redundancy Types: []
+2026-01-25 23:16:28,804 - INFO -   Redundancy Types: []
+2026-01-25 23:16:28,804 - INFO -   IS Types: []
+2026-01-25 23:16:28,804 - INFO -   IS Types: []
+2026-01-25 23:16:28,804 - INFO -   Wired Spares %: None
+2026-01-25 23:16:28,804 - INFO -   Wired Spares %: None
+2026-01-25 23:16:33,415 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2026-01-25.xlsx
+2026-01-25 23:16:33,421 - INFO - Design Input Review completed successfully. Output: C:\Working\Others\Python\Cloud App Projects\Design Input Review_2026-01-25.xlsx

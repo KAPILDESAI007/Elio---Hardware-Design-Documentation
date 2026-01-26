@@ -133,6 +133,42 @@
                                 </div>
                             </div>
 
+                            <!-- Controller Model Selection -->
+                            <div class="form-group">
+                                <label for="controllerModel">Controller Model <span class="column-indicator" id="controllerModelIndicator"></span></label>
+                                <select id="controllerModel" name="controller_model">
+                                    <option value="">-- Select Controller Model --</option>
+                                    <option value="S2SC70S">S2SC70S</option>
+                                    <option value="S2SC70D">S2SC70D</option>
+                                    <option value="SCS60S">SCS60S</option>
+                                    <option value="SCS60D">SCS60D</option>
+                                    <option value="SCS50S">SCS50S</option>
+                                </select>
+                                <small>Used if Controller_Model column is not available in file</small>
+                            </div>
+
+                            <!-- Explosion Protection Selection -->
+                            <div class="form-group">
+                                <label for="explosionProtection">Explosion Protection</label>
+                                <select id="explosionProtection" name="explosion_protection">
+                                    <option value="">-- Select --</option>
+                                    <option value="Yes">Yes (Adds FX suffix)</option>
+                                    <option value="No">No</option>
+                                </select>
+                                <small>Adds FX suffix to module model number if Yes</small>
+                            </div>
+
+                            <!-- Temperature Rating Selection -->
+                            <div class="form-group">
+                                <label for="temperatureRating">Temperature Rating</label>
+                                <select id="temperatureRating" name="temperature_rating">
+                                    <option value="">-- Select --</option>
+                                    <option value="Standard">Standard</option>
+                                    <option value="Wide">Wide (–40 to 70°C)</option>
+                                </select>
+                                <small>Impacts module suffix designation</small>
+                            </div>
+
                             <button type="submit" class="btn-primary">Process</button>
                         </form>
                     </div>

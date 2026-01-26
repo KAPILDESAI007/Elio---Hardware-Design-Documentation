@@ -184,6 +184,9 @@ def design_input_review():
         
         # Get user inputs
         system_type = request.form.get('system_type', '')
+        controller_model = request.form.get('controller_model', '')
+        explosion_protection = request.form.get('explosion_protection', '')
+        temperature_rating = request.form.get('temperature_rating', '')
         redundancy_types = []
         is_types = []
         wired_spares = None
@@ -208,6 +211,9 @@ def design_input_review():
         
         logger.info(f"Starting Design Input Review with file: {input_path}")
         logger.info(f"  System Type: {system_type}")
+        logger.info(f"  Controller Model: {controller_model}")
+        logger.info(f"  Explosion Protection: {explosion_protection}")
+        logger.info(f"  Temperature Rating: {temperature_rating}")
         logger.info(f"  Redundancy Types: {redundancy_types}")
         logger.info(f"  IS Types: {is_types}")
         logger.info(f"  Wired Spares %: {wired_spares}")
@@ -215,6 +221,9 @@ def design_input_review():
         # Create reviewer with user inputs
         reviewer = DesignInputReview(
             system_type=system_type if system_type else None,
+            controller_model=controller_model if controller_model else None,
+            explosion_protection=explosion_protection if explosion_protection else None,
+            temperature_rating=temperature_rating if temperature_rating else None,
             redundancy_types=redundancy_types,
             is_types=is_types,
             wired_spares=wired_spares
@@ -235,6 +244,12 @@ def design_input_review():
         
         if not reviewer.read_hardware_config():
             raise Exception("Failed to read hardware configuration")
+        
+        if not reviewer.read_mounting_rule():
+            raise Exception("Failed to read mounting rule")
+        
+        if not reviewer.read_controller_limits():
+            raise Exception("Failed to read controller limits")
         
         if not reviewer.assign_modules():
             raise Exception("Failed to assign modules")

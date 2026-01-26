@@ -117,6 +117,7 @@ document.getElementById('designFile').addEventListener('change', async (e) => {
         updateColumnIndicator('signalOriginIndicator', data.has_signal_origin, 'signal_origin');
         updateColumnIndicator('ioRedundancyIndicator', data.has_io_redundancy, 'IO_REDUNDANCY');
         updateColumnIndicator('isNonIsIndicator', data.has_is_non_is, 'IS_Non_IS');
+        updateColumnIndicator('controllerModelIndicator', data.has_controller_model, 'Controller_Model');
 
     } catch (error) {
         console.error('Error checking columns:', error);
@@ -147,6 +148,9 @@ document.getElementById('designForm').addEventListener('submit', async (e) => {
 
     formData.append('input_file', inputFile);
     formData.append('system_type', document.getElementById('systemType').value);
+    formData.append('controller_model', document.getElementById('controllerModel').value);
+    formData.append('explosion_protection', document.getElementById('explosionProtection').value);
+    formData.append('temperature_rating', document.getElementById('temperatureRating').value);
     
     // Get selected redundancy types
     const redundancyTypes = Array.from(document.querySelectorAll('input[name="redundancy_types"]:checked'))
