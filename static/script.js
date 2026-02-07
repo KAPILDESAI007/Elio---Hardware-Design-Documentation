@@ -18,6 +18,21 @@ document.querySelectorAll('.nav-item').forEach(item => {
     });
 });
 
+// Radio-exclusive behavior for checkboxes that should act like radio buttons
+document.querySelectorAll('input[type="checkbox"].radio-exclusive').forEach(checkbox => {
+    checkbox.addEventListener('change', (e) => {
+        if (e.target.checked) {
+            const group = e.target.getAttribute('data-group');
+            // Uncheck all other checkboxes in the same group
+            document.querySelectorAll(`input[type="checkbox"].radio-exclusive[data-group="${group}"]`).forEach(cb => {
+                if (cb !== e.target) {
+                    cb.checked = false;
+                }
+            });
+        }
+    });
+});
+
 document.querySelectorAll('.nav-subitem').forEach(item => {
     item.addEventListener('click', (e) => {
         e.preventDefault();
@@ -147,12 +162,32 @@ document.getElementById('designForm').addEventListener('submit', async (e) => {
     }
 
     formData.append('input_file', inputFile);
-    formData.append('system_type', document.getElementById('systemType').value);
-    formData.append('controller_model', document.getElementById('controllerModel').value);
-    formData.append('explosion_protection', document.getElementById('explosionProtection').value);
-    formData.append('temperature_rating', document.getElementById('temperatureRating').value);
     
-    // Get selected IO types
+    // Get selected system type (now checkbox with radio behavior)
+    const systemType = document.querySelector('input[name="system_type"]:checked');
+    if (systemType) {
+        formData.append('system_type', systemType.value);
+    }
+    
+    // Get selected controller model (now checkbox with radio behavior)
+    const controllerModel = document.querySelector('input[name="controller_model"]:checked');
+    if (controllerModel) {
+        formData.append('controller_model', controllerModel.value);
+    }
+    
+    // Get selected explosion protection (now checkbox with radio behavior)
+    const explosionProtection = document.querySelector('input[name="explosion_protection"]:checked');
+    if (explosionProtection) {
+        formData.append('explosion_protection', explosionProtection.value);
+    }
+    
+    // Get selected temperature rating (now checkbox with radio behavior)
+    const temperatureRating = document.querySelector('input[name="temperature_rating"]:checked');
+    if (temperatureRating) {
+        formData.append('temperature_rating', temperatureRating.value);
+    }
+    
+    // Get selected IO types (now checkbox with radio behavior)
     const ioTypes = Array.from(document.querySelectorAll('input[name="io_types"]:checked'))
         .map(cb => cb.value);
     formData.append('io_types', JSON.stringify(ioTypes));

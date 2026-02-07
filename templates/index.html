@@ -73,114 +73,136 @@
                                 <small>Supported formats: .xls, .xlsx</small>
                             </div>
 
-                            <!-- System Type and Wired Spares (Side by side) -->
+                            <!-- System Type & Controller Model (Side by side) -->
+                            <div class="form-row">
+                                <!-- System Type Selection (Radio button behavior) -->
+                                <div class="form-group form-col">
+                                    <label>System Type <span class="column-indicator" id="signalOriginIndicator"></span></label>
+                                    <small>Select ONE - Used if signal_origin column is not available in file</small>
+                                    <div class="checkbox-group">
+                                        <label class="checkbox-label">
+                                            <input type="checkbox" name="system_type" value="ESD" class="radio-exclusive" data-group="system_type"> ESD
+                                        </label>
+                                        <label class="checkbox-label">
+                                            <input type="checkbox" name="system_type" value="FGS" class="radio-exclusive" data-group="system_type"> FGS
+                                        </label>
+                                        <label class="checkbox-label">
+                                            <input type="checkbox" name="system_type" value="DCS" class="radio-exclusive" data-group="system_type"> DCS
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <!-- Controller Model Selection (Radio button behavior) -->
+                                <div class="form-group form-col">
+                                    <label>Controller Model <span class="column-indicator" id="controllerModelIndicator"></span></label>
+                                    <small>Select ONE - Used if Controller_Model column is not available in file</small>
+                                    <div class="checkbox-group-three-col">
+                                        <label class="checkbox-label">
+                                            <input type="checkbox" name="controller_model" value="S2SC70S" class="radio-exclusive" data-group="controller_model"> S2SC70S
+                                        </label>
+                                        <label class="checkbox-label">
+                                            <input type="checkbox" name="controller_model" value="S2SC70D" class="radio-exclusive" data-group="controller_model"> S2SC70D
+                                        </label>
+                                        <label class="checkbox-label">
+                                            <input type="checkbox" name="controller_model" value="SCS60S" class="radio-exclusive" data-group="controller_model"> SCS60S
+                                        </label>
+                                        <label class="checkbox-label">
+                                            <input type="checkbox" name="controller_model" value="SCS60D" class="radio-exclusive" data-group="controller_model"> SCS60D
+                                        </label>
+                                        <label class="checkbox-label">
+                                            <input type="checkbox" name="controller_model" value="SCS50S" class="radio-exclusive" data-group="controller_model"> SCS50S
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- IO Redundancy & IS/Non-IS Type (Side by side) -->
                             <div class="form-row">
                                 <div class="form-group form-col">
-                                    <label for="systemType">System Type <span class="column-indicator" id="signalOriginIndicator"></span></label>
-                                    <select id="systemType" name="system_type">
-                                        <option value="">-- Select System Type --</option>
-                                        <option value="ESD">ESD</option>
-                                        <option value="FGS">FGS</option>
-                                        <option value="DCS">DCS</option>
-                                    </select>
-                                    <small>Used if signal_origin column is not available in file</small>
+                                    <label>IO Redundancy <span class="column-indicator" id="ioRedundancyIndicator"></span></label>
+                                    <small>Select signal types to mark as redundant (if IO_REDUNDANCY column not available)</small>
+                                    <div class="checkbox-group">
+                                        <label class="checkbox-label">
+                                            <input type="checkbox" name="redundancy_types" value="AI"> AI (Analog Input)
+                                        </label>
+                                        <label class="checkbox-label">
+                                            <input type="checkbox" name="redundancy_types" value="DI"> DI (Digital Input)
+                                        </label>
+                                        <label class="checkbox-label">
+                                            <input type="checkbox" name="redundancy_types" value="AO"> AO (Analog Output)
+                                        </label>
+                                        <label class="checkbox-label">
+                                            <input type="checkbox" name="redundancy_types" value="DO"> DO (Digital Output)
+                                        </label>
+                                    </div>
                                 </div>
 
                                 <div class="form-group form-col">
+                                    <label>IS/Non-IS Type <span class="column-indicator" id="isNonIsIndicator"></span></label>
+                                    <small>Select signal types to mark as IS (if IS_Non_IS column not available, rest will be NIS)</small>
+                                    <div class="checkbox-group">
+                                        <label class="checkbox-label">
+                                            <input type="checkbox" name="is_types" value="AI"> AI (Analog Input)
+                                        </label>
+                                        <label class="checkbox-label">
+                                            <input type="checkbox" name="is_types" value="DI"> DI (Digital Input)
+                                        </label>
+                                        <label class="checkbox-label">
+                                            <input type="checkbox" name="is_types" value="AO"> AO (Analog Output)
+                                        </label>
+                                        <label class="checkbox-label">
+                                            <input type="checkbox" name="is_types" value="DO"> DO (Digital Output)
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- IO Types, Explosion Protection, Temperature Rating, Wired Spares (4 columns with inline options) -->
+                            <div class="form-row-four">
+                                <div class="form-group">
+                                    <label>IO Types</label>
+                                    <small>Select ONE</small>
+                                    <div class="checkbox-group-inline">
+                                        <label class="checkbox-label">
+                                            <input type="checkbox" name="io_types" value="FIO" class="radio-exclusive" data-group="io_types" checked> FIO
+                                        </label>
+                                        <label class="checkbox-label">
+                                            <input type="checkbox" name="io_types" value="NIO" class="radio-exclusive" data-group="io_types"> NIO
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Explosion Protection</label>
+                                    <small>Select ONE</small>
+                                    <div class="checkbox-group-inline">
+                                        <label class="checkbox-label">
+                                            <input type="checkbox" name="explosion_protection" value="Yes" class="radio-exclusive" data-group="explosion_protection"> Yes
+                                        </label>
+                                        <label class="checkbox-label">
+                                            <input type="checkbox" name="explosion_protection" value="No" class="radio-exclusive" data-group="explosion_protection"> No
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Temperature Rating</label>
+                                    <small>Select ONE</small>
+                                    <div class="checkbox-group-inline">
+                                        <label class="checkbox-label">
+                                            <input type="checkbox" name="temperature_rating" value="Standard" class="radio-exclusive" data-group="temperature_rating"> Standard
+                                        </label>
+                                        <label class="checkbox-label">
+                                            <input type="checkbox" name="temperature_rating" value="Wide" class="radio-exclusive" data-group="temperature_rating"> Wide
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
                                     <label for="wiredSpares">Wired Spares %</label>
                                     <input type="number" id="wiredSpares" name="wired_spares" min="0" max="100" step="5" placeholder="e.g., 10, 20, 5">
                                     <small>Enter percentage (0-100) to add wired spare channels. Leave blank for none.</small>
                                 </div>
-                            </div>
-
-                            <!-- IO Redundancy Selection -->
-                            <div class="form-group">
-                                <label>IO Redundancy <span class="column-indicator" id="ioRedundancyIndicator"></span></label>
-                                <small>Select signal types to mark as redundant (if IO_REDUNDANCY column not available)</small>
-                                <div class="checkbox-group">
-                                    <label class="checkbox-label">
-                                        <input type="checkbox" name="redundancy_types" value="AI"> AI (Analog Input)
-                                    </label>
-                                    <label class="checkbox-label">
-                                        <input type="checkbox" name="redundancy_types" value="DI"> DI (Digital Input)
-                                    </label>
-                                    <label class="checkbox-label">
-                                        <input type="checkbox" name="redundancy_types" value="AO"> AO (Analog Output)
-                                    </label>
-                                    <label class="checkbox-label">
-                                        <input type="checkbox" name="redundancy_types" value="DO"> DO (Digital Output)
-                                    </label>
-                                </div>
-                            </div>
-
-                            <!-- IS/Non-IS Selection -->
-                            <div class="form-group">
-                                <label>IS/Non-IS Type <span class="column-indicator" id="isNonIsIndicator"></span></label>
-                                <small>Select signal types to mark as IS (if IS_Non_IS column not available, rest will be NIS)</small>
-                                <div class="checkbox-group">
-                                    <label class="checkbox-label">
-                                        <input type="checkbox" name="is_types" value="AI"> AI (Analog Input)
-                                    </label>
-                                    <label class="checkbox-label">
-                                        <input type="checkbox" name="is_types" value="DI"> DI (Digital Input)
-                                    </label>
-                                    <label class="checkbox-label">
-                                        <input type="checkbox" name="is_types" value="AO"> AO (Analog Output)
-                                    </label>
-                                    <label class="checkbox-label">
-                                        <input type="checkbox" name="is_types" value="DO"> DO (Digital Output)
-                                    </label>
-                                </div>
-                            </div>
-
-                            <!-- Controller Model Selection -->
-                            <div class="form-group">
-                                <label for="controllerModel">Controller Model <span class="column-indicator" id="controllerModelIndicator"></span></label>
-                                <select id="controllerModel" name="controller_model">
-                                    <option value="">-- Select Controller Model --</option>
-                                    <option value="S2SC70S">S2SC70S</option>
-                                    <option value="S2SC70D">S2SC70D</option>
-                                    <option value="SCS60S">SCS60S</option>
-                                    <option value="SCS60D">SCS60D</option>
-                                    <option value="SCS50S">SCS50S</option>
-                                </select>
-                                <small>Used if Controller_Model column is not available in file</small>
-                            </div>
-
-                            <!-- IO Types Selection -->
-                            <div class="form-group">
-                                <label>IO Types</label>
-                                <small>Select module types to use for assignment</small>
-                                <div class="checkbox-group">
-                                    <label class="checkbox-label">
-                                        <input type="checkbox" name="io_types" value="FIO" checked> FIO (Field I/O Modules)
-                                    </label>
-                                    <label class="checkbox-label">
-                                        <input type="checkbox" name="io_types" value="NIO"> NIO (Network I/O Modules)
-                                    </label>
-                                </div>
-                            </div>
-
-                            <!-- Explosion Protection Selection -->
-                            <div class="form-group">
-                                <label for="explosionProtection">Explosion Protection</label>
-                                <select id="explosionProtection" name="explosion_protection">
-                                    <option value="">-- Select --</option>
-                                    <option value="Yes">Yes (Adds FX suffix)</option>
-                                    <option value="No">No</option>
-                                </select>
-                                <small>Adds FX suffix to module model number if Yes</small>
-                            </div>
-
-                            <!-- Temperature Rating Selection -->
-                            <div class="form-group">
-                                <label for="temperatureRating">Temperature Rating</label>
-                                <select id="temperatureRating" name="temperature_rating">
-                                    <option value="">-- Select --</option>
-                                    <option value="Standard">Standard</option>
-                                    <option value="Wide">Wide (–40 to 70°C)</option>
-                                </select>
-                                <small>Impacts module suffix designation</small>
                             </div>
 
                             <button type="submit" class="btn-primary">Process</button>
@@ -428,6 +450,21 @@
                 container.appendChild(logEntry);
             });
         }
+
+        // Radio button behavior for exclusive checkboxes
+        document.querySelectorAll('.radio-exclusive').forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                if (this.checked) {
+                    // Uncheck all other checkboxes in the same group
+                    const group = this.getAttribute('data-group');
+                    document.querySelectorAll(`.radio-exclusive[data-group="${group}"]`).forEach(cb => {
+                        if (cb !== this) {
+                            cb.checked = false;
+                        }
+                    });
+                }
+            });
+        });
     </script>
 </body>
 </html>
