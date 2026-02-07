@@ -1,0 +1,46 @@
+Design Input Review:
+1. Read the excel file uploaded by user.
+2. Below listed columns are used from the file which is uploaded by user:
+PID_TAG
+signal_origin - System Type
+IO_type - AI, DI, DO, AO, soft ; first convert all content in to uper case in this column and then look for this keywords under this column and categories in to these 5 types
+IO_REDUNDANCY - IO Redundancy
+IS_Non_IS - IS/Non-IS Type
+3. Read other user inputs from fronend as below;
+Controller Model - This will be used for checking constraints in "Controller_Limits" sheet.
+Explosion Protection - This will be used in "IO_Module_Catalog" sheet for checking constraints i.e. Suffix_Explosion column
+Temperature Rating - This will be used in "IO_Module_Catalog" sheet for checking constraints i.e. Ambient_Max_C - if user input was wide then selecte modules which has 70 in this column. for Standard select modules which has 60 & 65 in this column.
+IO Type - FIO or NIO; based on this user input make sure that you are filtering the rows in Controller_Limits contraint sheet and then subsequntly in other constraints sheets also.
+4. Next, use the "Controller_Limits" sheet from "Yokogawa_SIS_Constraints_Model_v3" excel file. This sheet gives controller constraints based on System_Type and Controller_Model column.
+5. Upon reading the user input file, first count the total IO and IO count for each type - AI, DI, DO, AO
+6. Next, based on user input for Wired Spare %, add the spare count for each IO Type
+7. Next, review the PID_Tag column and find out which signals are 2oo3 logic based on PID_Tag names.
+If the tag names are having only 1-2 characters / digits difference then it is considered as 2oo3 signals.
+8. Next, calculate the number of modules required based on total IO count for each type of IOs.
+9. Then, start the channel assignement and make sure that wired spares are equally distributed & blank / empty channels are also eually available in each module.
+10. Based on above constraints filtering, make use of "Usable_Channels" column from "IO_Module_Catalog" sheet and ensure / validate that the number of channels are not exceeding this.
+11. Make use of "Mounting Rule" sheet to validate that, the number of modules in each node are aligning requirement in this sheet.
+
+Channel Assignement:
+First check total signals for each IO Type-AI, DI, DO, AO
+next add wired spare count based on user input for each type of signal.
+this will give total number of signals for each IO Type.
+Then run through available module numbers based on all constratints and figure out which IO module will be used and total number of usable channels.
+Then, figure out how many modules will be required for each IO Type.
+Next, figure out how many total nodes will be required and prepare total nodes by using Mounting Rule sheet. So, all modules will be assigned in each slot at this time. Only channel assignment will be left and that can be assigned in next steps.
+Then, start assigning channels.
+If IO Type is redundant then assign channel to odd slot and leave even slot blank since that will be redundant.
+During this assignment make sure that, the wired spares are distributed equally in each module and empty channels are also equally distributed for each IO Type wise.
+During channel assignment assign channels from ch-1 to ch-16 and then move on to next module. If this module was redundant then skip next module and move to next available one.
+
+1. Count signals per IO type (AI, DI, DO, AO)
+2. Add wired spares count to each IO type
+   ↓ Total channels needed per IO type
+3. Calculate modules required = ceil(total_channels_needed / 16)
+4. Create module instances with planned capacity
+5. Assign channels 1-16 across ALL items (signals + spares):
+   - Distribute signals first
+   - Then distribute spares equally
+   - Track empty channels for equal distribution
+6. For redundant IO: use odd channels, skip even slots
+7. Assign nodes/slots to modules (using Mounting Rule)

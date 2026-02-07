@@ -139,7 +139,7 @@ def process():
         })
         
     except Exception as e:
-        logger.error(f"Processing failed: {str(e)}")
+        logger.exception(f"Processing failed: {str(e)}")
         return jsonify({'error': str(e), 'logs': log_capture.records}), 500
 
 @app.route('/api/check-columns', methods=['POST'])
@@ -165,7 +165,7 @@ def check_columns():
         return jsonify(column_info)
         
     except Exception as e:
-        logger.error(f"Failed to check columns: {str(e)}")
+        logger.exception(f"Failed to check columns: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/design-input-review', methods=['POST'])
@@ -279,16 +279,10 @@ def design_input_review():
         if not reviewer.identify_unassigned():
             raise Exception("Failed to identify unassigned")
         
-        # Generate wired spares if percentage was provided
-        reviewer.df_wired_spares = reviewer.generate_wired_spares()
-        
-        # If wired spares were generated, add them to df_assigned and reassign nodes/slots
-        if reviewer.df_wired_spares is not None and not reviewer.df_wired_spares.empty:
-            logger.info(f"Adding {len(reviewer.df_wired_spares)} wired spares to assigned data")
-            reviewer.df_assigned = pd.concat([reviewer.df_assigned, reviewer.df_wired_spares], ignore_index=True)
-            logger.info(f"Reassigning nodes and controllers for wired spare module instances")
-            if not reviewer.assign_nodes_and_controllers():
-                raise Exception("Failed to reassign nodes and controllers for spare instances")
+        # NOTE: Wired spares are ALREADY assigned in assign_modules()
+        # Do NOT call generate_wired_spares() as it duplicates spares
+        # The old generate_wired_spares() method is obsolete
+        reviewer.df_wired_spares = pd.DataFrame()  # Empty - spares already in df_assigned
         
         if not reviewer.generate_output_file():
             raise Exception("Failed to generate output file")
@@ -307,7 +301,7 @@ def design_input_review():
         })
         
     except Exception as e:
-        logger.error(f"Design Input Review failed: {str(e)}")
+        logger.exception(f"Design Input Review failed: {str(e)}")
         return jsonify({'error': str(e), 'logs': log_capture.records}), 500
 
 @app.route('/api/download/<path:filename>')

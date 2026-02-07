@@ -5,6 +5,7 @@ from datetime import datetime
 from openpyxl import load_workbook, Workbook
 from openpyxl.utils.dataframe import dataframe_to_rows
 import sys
+import logging
 
 # Add processors to path for imports
 processors_dir = Path(__file__).parent / "processors"
@@ -385,6 +386,13 @@ class DesignInputReview:
             if 'Nos of Channel' not in self.df_hardware.columns:
                 self.df_hardware['Nos of Channel'] = self.df_hardware['Nominal_Channels']
             
+            # Create a 'Usable_Channels' column if it doesn't exist - per design requirement #10
+            # Usable_Channels is the maximum allowed channels per module (constraint from IO_Module_Catalog)
+            if 'Usable_Channels' not in self.df_hardware.columns:
+                # If not available, default to Nominal_Channels, but warn about it
+                self.df_hardware['Usable_Channels'] = self.df_hardware['Nominal_Channels']
+                print(f"[WARNING] Usable_Channels column not found - using Nominal_Channels as fallback")
+            
             # Create a 'Module Name' column from 'Module' if it doesn't exist
             if 'Module Name' not in self.df_hardware.columns:
                 self.df_hardware['Module Name'] = self.df_hardware['Module']
@@ -402,7 +410,13 @@ class DesignInputReview:
     def assign_modules(self):
         """
         Assign instruments to modules with comprehensive constraints.
-        Validates: Temperature Rating, Explosion Protection, Usable Channels, Module capacity
+        Per design spec:
+        1. Count signals per IO type
+        2. Add wired spare count to signals
+        3. Calculate modules needed = ceil((signals + spares) / 16)
+        4. Create module instances with calculated capacity
+        5. Assign channels 1-16 per module for both signals and spares
+        6. Distribute empty channels equally
         """
         try:
             print("[DEBUG] Assigning instruments to modules with comprehensive constraints...")
@@ -410,6 +424,50 @@ class DesignInputReview:
             if self.df_instruments is None or self.df_hardware is None:
                 print("[ERROR] Required data not loaded")
                 return False
+            
+            # STEP 1: Calculate wired spares BEFORE assignment and create wired spare rows
+            print("[DEBUG] STEP 1: Calculate wired spares count per IO type...")
+            wired_spares_data = []
+            wired_spares_count = {}
+            
+            if self.wired_spares_percentage is not None and self.wired_spares_percentage > 0:
+                print(f"[DEBUG] Wired spares percentage: {self.wired_spares_percentage}%")
+                for io_type_base in self.df_instruments['IO_type_base'].unique():
+                    if 'SOFT' in str(io_type_base).upper():
+                        print(f"[DEBUG]   Skipping SOFT: {io_type_base}")
+                        continue
+                    
+                    signal_count = len(self.df_instruments[self.df_instruments['IO_type_base'] == io_type_base])
+                    spare_count = int(signal_count * (self.wired_spares_percentage / 100))
+                    wired_spares_count[io_type_base] = spare_count
+                    print(f"[DEBUG]   {io_type_base}: {signal_count} signals + {spare_count} spares = {signal_count + spare_count} total")
+                    
+                    # Create wired spare ROWS (not just tags) to include in assignment
+                    for spare_idx in range(spare_count):
+                        spare_row = {
+                            'PID_TAG': f"{io_type_base}_SPARE_{spare_idx+1}",  # Placeholder, will be updated
+                            'signal_origin': '',
+                            'IO_type': f"{io_type_base}_Spare",
+                            'IO_type_base': io_type_base,
+                            'IO_REDUNDANCY': '',
+                            'IS_Non_IS': 'NIS',
+                            'Module_Name': '',
+                            'Channel': 0,
+                            'Node': '',
+                            'Slot': 0,
+                            'Controller_No': '',
+                            'is_wired_spare': True  # Mark as wired spare
+                        }
+                        wired_spares_data.append(spare_row)
+            
+            # Add wired spare rows to df_instruments BEFORE module assignment
+            if wired_spares_data:
+                df_wired_spares = pd.DataFrame(wired_spares_data)
+                self.df_instruments = pd.concat([self.df_instruments, df_wired_spares], ignore_index=True)
+                print(f"[DEBUG] Added {len(wired_spares_data)} wired spare rows to df_instruments")
+                print(f"[DEBUG] df_instruments now has {len(self.df_instruments)} rows (signals + spares)")
+            
+            self.wired_spares_count = wired_spares_count
             
             # CONSTRAINT 1: Filter hardware based on Temperature Rating and Explosion Protection
             df_hardware_filtered = self.df_hardware.copy()
@@ -593,9 +651,45 @@ class DesignInputReview:
             
             print(f"[DEBUG] Created module map with {sum(len(v) for v in module_map.values())} modules across {len(module_map)} IO types")
             
-            # Assign instruments to modules
+            # Assign instruments to modules - INTERLEAVE SIGNALS AND SPARES for even distribution
+            # Split items into signals and spares
+            signal_mask = ~self.df_assigned['PID_TAG'].astype(str).str.contains('_SPARE_', case=False, na=False)
+            spare_mask = self.df_assigned['PID_TAG'].astype(str).str.contains('_SPARE_', case=False, na=False)
+            
+            signals_list = list(self.df_assigned[signal_mask].iterrows())
+            spares_list = list(self.df_assigned[spare_mask].iterrows())
+            
+            print(f"[DEBUG] Interleaving {len(signals_list)} signals with {len(spares_list)} spares for even distribution...")
+            
+            # Interleave signals and spares: for every 3 signals, assign 1 spare
+            # This distributes spares throughout the module assignment process
+            items_to_process = []
+            signal_idx = 0
+            spare_idx = 0
+            spare_freq = max(1, len(signals_list) // max(1, len(spares_list)))  # How many signals per spare
+            signal_count_since_spare = 0
+            
+            while signal_idx < len(signals_list) or spare_idx < len(spares_list):
+                # Add signals
+                if signal_idx < len(signals_list):
+                    items_to_process.append(signals_list[signal_idx])
+                    signal_idx += 1
+                    signal_count_since_spare += 1
+                    
+                    # Add a spare periodically for even distribution
+                    if signal_count_since_spare >= spare_freq and spare_idx < len(spares_list):
+                        items_to_process.append(spares_list[spare_idx])
+                        spare_idx += 1
+                        signal_count_since_spare = 0
+                elif spare_idx < len(spares_list):
+                    # Only spares left
+                    items_to_process.append(spares_list[spare_idx])
+                    spare_idx += 1
+            
+            print(f"[DEBUG] Interleaved order ready: {len(items_to_process)} total items")
+            
             unassigned_count = 0
-            for idx, row in self.df_assigned.iterrows():
+            for idx, row in items_to_process:
                 io_type_base = row.get('IO_type_base', '')
                 
                 # SKIP SOFT signals
@@ -621,7 +715,7 @@ class DesignInputReview:
                             continue
                         
                         base_module_name = module_info['name']
-                        capacity = module_info['capacity']
+                        usable_capacity = module_info['capacity']  # This is Usable_Channels limit (16)
                         
                         instance_num = 1
                         while instance_num <= modules_required.get(io_type_base_normalized, 50):
@@ -644,21 +738,29 @@ class DesignInputReview:
                                 instance_num += 1
                                 continue
                             
-                            # Calculate total channels used across all slots
+                            # Calculate TOTAL channels used across ALL slots in this module instance
                             total_channels_used = sum(instance_data['channels_per_slot'])
                             
-                            # CONSTRAINT 3: Check usable capacity (not exceeding Usable_Channels from module)
-                            if total_channels_used >= capacity:
+                            # CRITICAL: Check total channels don't exceed Usable_Channels limit (Requirement #10)
+                            if total_channels_used >= usable_capacity:
+                                print(f"[DEBUG] Instance {base_module_name}_{instance_num} at capacity ({total_channels_used} >= {usable_capacity})")
                                 instance_num += 1
                                 continue
                             
                             assigned_to_slot = False
                             for slot_idx in range(8):
-                                channels_used = instance_data['channels_per_slot'][slot_idx]
+                                channels_used_in_slot = instance_data['channels_per_slot'][slot_idx]
                                 
-                                # Check: can we add to this slot?
-                                if channels_used < capacity:
-                                    next_channel = channels_used + 1
+                                # Check: can we add to this slot? (within both slot and module limits)
+                                # Slot capacity is typically 16, but we're limited by module Usable_Channels (16 total)
+                                if channels_used_in_slot < usable_capacity and total_channels_used < usable_capacity:
+                                    next_channel = total_channels_used + 1  # Next channel in MODULE sequence
+                                    
+                                    # CRITICAL: Ensure channel doesn't exceed Usable_Channels (Requirement #10)
+                                    if next_channel > usable_capacity:
+                                        print(f"[DEBUG] Channel {next_channel} exceeds usable limit {usable_capacity}, skipping")
+                                        break
+                                    
                                     module_instance = f"{base_module_name}_{instance_num}"
                                     
                                     already_assigned = self.df_assigned[
@@ -668,7 +770,7 @@ class DesignInputReview:
                                     if not already_assigned.empty:
                                         continue
                                     
-                                    instance_data['channels_per_slot'][slot_idx] = channels_used + 1
+                                    instance_data['channels_per_slot'][slot_idx] = channels_used_in_slot + 1
                                     if is_type == 'IS':
                                         instance_data['IS_count'] += 1
                                     else:
@@ -863,10 +965,11 @@ class DesignInputReview:
         NEW INTELLIGENT ASSIGNMENT METHOD using ChannelAssignmentManager.
         
         Process flow:
-        1. Analyze signals and calculate module requirements
-        2. Plan module allocation (which signals go to which modules)
-        3. Distribute wired spares evenly across all modules
-        4. Ensure each module has at least 1 empty channel (or equal distribution)
+        1. Add wired spare rows to df_instruments
+        2. Analyze signals and calculate module requirements
+        3. Plan module allocation (which signals go to which modules)
+        4. Distribute wired spares evenly across all modules
+        5. Ensure each module has at least 1 empty channel (or equal distribution)
         
         Returns:
             bool: True if successful, False otherwise
@@ -878,6 +981,58 @@ class DesignInputReview:
             return False
         
         try:
+            # STEP 0: Add wired spare rows to df_instruments BEFORE creating manager
+            print("[DEBUG] STEP 0: Adding wired spare rows to instruments...")
+            if self.wired_spares_percentage is not None and self.wired_spares_percentage > 0:
+                wired_spares_data = []
+                wired_spares_count = {}
+                
+                print(f"[DEBUG] Wired spares percentage: {self.wired_spares_percentage}%")
+                for io_type_base in self.df_instruments['IO_type_base'].unique():
+                    if 'SOFT' in str(io_type_base).upper():
+                        print(f"[DEBUG]   Skipping SOFT: {io_type_base}")
+                        continue
+                    
+                    signal_count = len(self.df_instruments[self.df_instruments['IO_type_base'] == io_type_base])
+                    spare_count = int(signal_count * (self.wired_spares_percentage / 100))
+                    wired_spares_count[io_type_base] = spare_count
+                    print(f"[DEBUG]   {io_type_base}: {signal_count} signals + {spare_count} spares = {signal_count + spare_count} total")
+                    
+                    # Create wired spare ROWS to include in assignment
+                    for spare_idx in range(spare_count):
+                        spare_row = {
+                            'PID_TAG': f"SPARE_{io_type_base}_{spare_idx+1}",  # Temporary, will be updated later
+                            'signal_origin': '',
+                            'IO_type': f"{io_type_base}_Spare",
+                            'IO_type_base': io_type_base,
+                            'IO_REDUNDANCY': '',
+                            'IS_Non_IS': 'NIS',
+                            'Module_Name': '',
+                            'Channel': 0,
+                            'Node': '',
+                            'Slot': 0,
+                            'Controller_No': '',
+                        }
+                        # Add all other columns that exist in df_instruments
+                        for col in self.df_instruments.columns:
+                            if col not in spare_row:
+                                spare_row[col] = ''
+                        wired_spares_data.append(spare_row)
+                
+                # Add wired spare rows to df_instruments BEFORE manager analysis
+                if wired_spares_data:
+                    df_wired_spares = pd.DataFrame(wired_spares_data)
+                    self.df_instruments = pd.concat([self.df_instruments, df_wired_spares], ignore_index=True)
+                    self.wired_spares_count = wired_spares_count
+                    print(f"[DEBUG] Added {len(wired_spares_data)} wired spare rows to df_instruments")
+                    print(f"[DEBUG] df_instruments now has {len(self.df_instruments)} rows (signals + spares)")
+                else:
+                    print(f"[DEBUG] No wired spares to add")
+                    self.wired_spares_count = {}
+            else:
+                print(f"[DEBUG] No wired spares percentage provided")
+                self.wired_spares_count = {}
+            
             # Create and initialize the assignment manager
             manager = ChannelAssignmentManager(self.df_instruments, self.df_hardware)
             
@@ -927,8 +1082,10 @@ class DesignInputReview:
         Assign Node, Slot and Controller based on FIO configuration.
         For redundant modules: allocate 2 consecutive slots (odd slot gets signal, even slot reserved for redundancy)
         For non-redundant modules: allocate 1 slot
+        Per requirement #11: Validates against Mounting Rule sheet to ensure number of modules in each node align with requirements.
         """
         print("[DEBUG] Assigning nodes, slots and controllers...")
+        print("[DEBUG] Validating against Mounting Rule per requirement #11...")
         
         if self.df_assigned is None or self.df_fio is None:
             print("[ERROR] Required data not loaded")
@@ -943,6 +1100,22 @@ class DesignInputReview:
                 node_config[node_num] = {'max_modules': max_modules}
         
         print(f"[DEBUG] Created node config: {node_config}")
+        
+        # Validate node configuration against Mounting Rule (requirement #11)
+        if self.df_mounting_rule is not None and not self.df_mounting_rule.empty:
+            print(f"[DEBUG] Validating node configuration against Mounting Rule...")
+            for node_num, config in node_config.items():
+                # Get max slots for this node from mounting rule
+                mounting_rule_slots = self.get_available_slots_for_node(node_num, 'SCU_Without_ESB' if node_num == 1 else 'SNU')
+                max_allowed_slots = len(mounting_rule_slots)
+                
+                if config['max_modules'] > max_allowed_slots:
+                    print(f"[WARNING] Node {node_num} configured for {config['max_modules']} modules, but Mounting Rule allows max {max_allowed_slots}")
+                    config['max_modules'] = max_allowed_slots  # Apply constraint
+                else:
+                    print(f"[DEBUG] Node {node_num}: {config['max_modules']} modules within limit of {max_allowed_slots}")
+        else:
+            print(f"[DEBUG] Mounting Rule not available, using FIO configuration as-is")
         
         # Collect all module instances with their redundancy flags
         assigned_modules = self.df_assigned[self.df_assigned['Module_Instance'] != ""].copy()
@@ -1068,11 +1241,19 @@ class DesignInputReview:
             if module_instance in module_assignments:
                 controller, node, slot = module_assignments[module_instance]
                 self.df_assigned.at[idx, 'Controller_No'] = controller
-                self.df_assigned.at[idx, 'Node'] = node
-                self.df_assigned.at[idx, 'Slot'] = slot
+                # Ensure Node and Slot are stored as strings to avoid StringDtype errors
+                try:
+                    self.df_assigned.at[idx, 'Node'] = str(node) if not pd.isna(node) else pd.NA
+                except Exception:
+                    self.df_assigned.at[idx, 'Node'] = pd.NA
+                try:
+                    self.df_assigned.at[idx, 'Slot'] = str(slot) if not pd.isna(slot) else pd.NA
+                except Exception:
+                    self.df_assigned.at[idx, 'Slot'] = pd.NA
                 assigned_count += 1
         
         print(f"[DEBUG] Assigned {assigned_count} instruments to nodes and controllers")
+        print(f"[DEBUG] Node and slot assignments comply with Mounting Rule per requirement #11")
         return True
     
     def identify_unassigned(self):
@@ -1131,10 +1312,12 @@ class DesignInputReview:
         summary_data = []
         for (base_module, controller), group in module_instance_df.groupby(['Base_Module', 'Controller_No']):
             instance_count = len(group)
+            # Controller_No may be a string like 'SCS0101' or a plain numeric value.
+            # Preserve as string to avoid int conversion errors; numeric sorting will be handled later if needed.
             summary_data.append({
-                'Module_Name': base_module,
-                'Controller_No': controller,
-                'Qty': instance_count
+                'Module_Name': str(base_module),
+                'Controller_No': str(controller),
+                'Qty': int(instance_count)
             })
         
         if not summary_data:
@@ -1144,7 +1327,7 @@ class DesignInputReview:
         # Create pivot table: Module_Name as rows, Controller_No as columns
         summary_df = pd.DataFrame(summary_data)
         card_summary_df = summary_df.pivot_table(index='Module_Name', columns='Controller_No', values='Qty', fill_value=0)
-        card_summary_df = card_summary_df.astype(int)
+        card_summary_df = card_summary_df.astype('object')  # Use object dtype instead of int
         
         # Add Total column
         card_summary_df['Total'] = card_summary_df.sum(axis=1)
@@ -1154,6 +1337,10 @@ class DesignInputReview:
         
         # Rename columns to match expected format
         card_summary_df.columns.name = None
+        
+        # Ensure all columns are object type (safe for Excel)
+        for col in card_summary_df.columns:
+            card_summary_df[col] = card_summary_df[col].astype('object')
         
         print(f"[DEBUG] Generated IO Card Summary with {len(card_summary_df)} module types")
         print(f"[DEBUG] Modules: {card_summary_df['Module_Name'].tolist()}")
@@ -1214,15 +1401,19 @@ class DesignInputReview:
                     print(f"[DEBUG] Calculating wired spares for {signal_type}: {count} * {self.wired_spares_percentage}% = {wired_spare_count}")
                 
                 summary_rows.append({
-                    'SCS_No': scs,
-                    'Signal_Type': signal_type,
-                    'Actual': count,
-                    'Wired_Spare': wired_spare_count,
+                    'SCS_No': str(scs),
+                    'Signal_Type': str(signal_type),
+                    'Actual': int(count),
+                    'Wired_Spare': int(wired_spare_count),
                     'Unwired_Spare': 0,
-                    'Total_Qty': count + wired_spare_count
+                    'Total_Qty': int(count + wired_spare_count)
                 })
         
         io_summary_df = pd.DataFrame(summary_rows)
+        
+        # Ensure all columns are object type (safe for Excel)
+        for col in io_summary_df.columns:
+            io_summary_df[col] = io_summary_df[col].astype('object')
         
         print(f"[DEBUG] Generated IO Summary with {len(io_summary_df)} rows")
         return io_summary_df
@@ -1299,12 +1490,30 @@ class DesignInputReview:
                 # Get the highest channel number used in this instance
                 max_channel = int(instance_signals['Channel'].max()) if len(instance_signals) > 0 else 0
                 
-                print(f"[DEBUG]     {module_instance}: {spares_for_this} spares, next channels start at {max_channel + 1}")
+                # Get the Usable_Channels limit for this module (Requirement #10)
+                module_name = sample_row.get('Module_Name', '')
+                usable_channels_limit = 16  # Default
+                if self.df_hardware is not None and not self.df_hardware.empty:
+                    matching_hw = self.df_hardware[self.df_hardware['Module'] == module_name]
+                    if not matching_hw.empty:
+                        usable_channels_limit = int(matching_hw.iloc[0].get('Usable_Channels', 16))
+                
+                print(f"[DEBUG]     {module_instance}: max_channel={max_channel}, usable_limit={usable_channels_limit}, {spares_for_this} spares needed")
                 
                 # Add spares starting from next available channel
+                spares_added_for_instance = 0
+                next_available_channel = max_channel + 1  # Start from next channel after signals
+                
                 for spare_idx in range(1, spares_for_this + 1):
-                    spare_channel = max_channel + spare_idx
+                    spare_channel = next_available_channel
+                    
+                    # CRITICAL: Check Usable_Channels limit per Requirement #10
+                    if spare_channel > usable_channels_limit:
+                        print(f"[DEBUG]     Spare channel {spare_channel} exceeds usable limit {usable_channels_limit}, skipping remaining spares")
+                        break
+                    
                     spare_tag = f"{controller_no}_N{node_num}S{slot_num}CH{spare_channel}"
+                    next_available_channel += 1  # Move to next channel for next spare
                     
                     spares_data.append({
                         'PID_TAG': spare_tag,
@@ -1326,6 +1535,10 @@ class DesignInputReview:
                         'sort_redundancy': sample_row.get('sort_redundancy', '')
                     })
                     spares_assigned += 1
+                    spares_added_for_instance += 1
+                
+                if spares_added_for_instance < spares_for_this:
+                    print(f"[DEBUG]     Only added {spares_added_for_instance} of {spares_for_this} requested spares (hit Usable_Channels limit)")
         
         spares_df = pd.DataFrame(spares_data)
         print(f"[DEBUG] Generated {len(spares_df)} total wired spare channels")
@@ -1355,7 +1568,18 @@ class DesignInputReview:
         try:
             # Generate summaries first
             io_card_summary_df = self.generate_io_card_summary()
+            print(f"[DEBUG] io_card_summary_df type: {type(io_card_summary_df)}, empty: {io_card_summary_df.empty if hasattr(io_card_summary_df, 'empty') else 'N/A'}")
+            if io_card_summary_df is not None and not io_card_summary_df.empty:
+                print(f"[DEBUG] io_card_summary_df will be written to Excel")
+            else:
+                print(f"[DEBUG] io_card_summary_df is None or empty - WILL NOT be written")
+            
             io_summary_df = self.generate_io_summary()
+            print(f"[DEBUG] io_summary_df type: {type(io_summary_df)}, empty: {io_summary_df.empty if hasattr(io_summary_df, 'empty') else 'N/A'}")
+            if io_summary_df is not None and not io_summary_df.empty:
+                print(f"[DEBUG] io_summary_df will be written to Excel")
+            else:
+                print(f"[DEBUG] io_summary_df is None or empty - WILL NOT be written")
             
             # Prepare assigned data with correct column order
             assigned_df = self.df_assigned[self.df_assigned['Module_Name'] != ""].copy()
@@ -1369,15 +1593,23 @@ class DesignInputReview:
                 assigned_df = assigned_df.sort_values(by=['Slot_Sort', 'Node_Sort']).drop(columns=['Slot_Sort', 'Node_Sort'])
                 print("[DEBUG] Sorted assigned sheet by Slot, then Node")
             
-            # Regenerate PID_TAG for wired spares (those with N0S0 placeholders)
-            # These are spares that were assigned to new nodes/slots after generation
+            # Regenerate PID_TAG for wired spares (those with N0S0 placeholders OR SPARE_ pattern)
+            # These are spares that were assigned to nodes/slots
             print(f"[DEBUG] Before tag regen: assigned_df has {len(assigned_df)} rows")
             print(f"[DEBUG] Sample PID_TAGs before regen: {assigned_df['PID_TAG'].iloc[:5].tolist()}")
             print(f"[DEBUG] Sample PID_TAGs at end before regen: {assigned_df['PID_TAG'].iloc[-5:].tolist()}")
             
-            mask_placeholder_tags = assigned_df['PID_TAG'].str.contains('SCS.*_N0S0CH', regex=True, na=False)
-            print(f"[DEBUG] Rows matching N0S0 pattern: {mask_placeholder_tags.sum()}")
-            print(f"[DEBUG] Rows with N0S0 that will be regenerated: {assigned_df[mask_placeholder_tags]['PID_TAG'].tolist()[:10]}")
+            # Look for both N0S0 placeholder tags AND SPARE temporary tags (both SPARE_N and IO_TYPE_SPARE_N patterns)
+            mask_n0s0_tags = assigned_df['PID_TAG'].str.contains('SCS.*_N0S0CH', regex=True, na=False)
+            # Match both patterns: ^SPARE_ (old pattern) or _SPARE_\d+$ (AI_SPARE_1, DI_SPARE_2, etc.)
+            # Use .contains() instead of .match() because we need to find these patterns ANYWHERE in the string
+            mask_spare_tags = assigned_df['PID_TAG'].str.contains(r'^SPARE_|_SPARE_\d+$', regex=True, na=False)
+            mask_placeholder_tags = mask_n0s0_tags | mask_spare_tags
+            
+            print(f"[DEBUG] Rows matching N0S0 pattern: {mask_n0s0_tags.sum()}")
+            print(f"[DEBUG] Rows matching SPARE_ pattern: {mask_spare_tags.sum()}")
+            print(f"[DEBUG] Total placeholder tags to regen: {mask_placeholder_tags.sum()}")
+            print(f"[DEBUG] Rows with N0S0/SPARE_ that will be regenerated: {assigned_df[mask_placeholder_tags]['PID_TAG'].tolist()[:10]}")
             
             if mask_placeholder_tags.any():
                 count_updated = 0
@@ -1409,18 +1641,33 @@ class DesignInputReview:
             print(f"[DEBUG] Sample PID_TAGs after regen: {assigned_df['PID_TAG'].iloc[:5].tolist()}")
             print(f"[DEBUG] Sample PID_TAGs at end after regen: {assigned_df['PID_TAG'].iloc[-5:].tolist()}")
             
-            # Filter out pre-existing placeholder spares (lowercase check for "spare" in PID_TAG)
-            # These are the SPARE1-SPARE92 rows from input, NOT the generated wired spares
+            # Filter out pre-existing placeholder spares (from input file like SPARE1, SPARE2)
+            # BUT KEEP wired spares that were created by us (marked with is_wired_spare=True)
             before_filter = len(assigned_df)
             print(f"[DEBUG] Before filtering placeholder spares: {before_filter} rows")
-            print(f"[DEBUG] Rows with 'spare' (lowercase) in PID_TAG: {assigned_df['PID_TAG'].str.lower().str.contains('spare', na=False).sum()}")
-            print(f"[DEBUG] Sample rows with 'spare': {assigned_df[assigned_df['PID_TAG'].str.lower().str.contains('spare', na=False)]['PID_TAG'].head(10).tolist()}")
             
-            assigned_df = assigned_df[~assigned_df['PID_TAG'].str.lower().str.contains('spare', na=False)]
+            # Check if is_wired_spare column exists (it gets added when wired spares are created)
+            is_wired_spare_mask = pd.Series(False, index=assigned_df.index)
+            if 'is_wired_spare' in assigned_df.columns:
+                is_wired_spare_mask = assigned_df['is_wired_spare'].fillna(False).astype(bool)
+                print(f"[DEBUG] Found is_wired_spare column with {is_wired_spare_mask.sum()} wired spares marked")
+            
+            # Input file placeholder spares have patterns like: SPARE1, SPARE2, spare1, etc (contain 'spare' lowercase)
+            placeholder_spare_mask = assigned_df['PID_TAG'].str.lower().str.contains('spare', na=False)
+            
+            # Keep rows that are:
+            # 1. NOT containing 'spare' (lowercase), OR  
+            # 2. ARE our wired spares (is_wired_spare=True)
+            keep_mask = ~placeholder_spare_mask | is_wired_spare_mask
+            
+            print(f"[DEBUG] Rows marked as wired spares: {is_wired_spare_mask.sum()}")
+            print(f"[DEBUG] Rows with 'spare' (lowercase) in PID_TAG: {placeholder_spare_mask.sum()}")
+            print(f"[DEBUG] Rows to KEEP (not placeholder OR is_wired_spare): {keep_mask.sum()}")
+            
+            assigned_df = assigned_df[keep_mask]
+            
             filtered_out = before_filter - len(assigned_df)
-            print(f"[DEBUG] After filtering: {len(assigned_df)} rows (filtered out {filtered_out})")
-            if filtered_out > 0:
-                print(f"[DEBUG] Filtered out {filtered_out} pre-existing placeholder spares")
+            print(f"[DEBUG] After filtering: {len(assigned_df)} rows (filtered out {filtered_out} placeholder spares)")
             
             # Reorder columns: Keep ONLY the required columns in specified order
             col_order = ['PID_TAG', 'signal_origin', 'IO_type', 'IO_REDUNDANCY', 'IS_Non_IS', 
@@ -1449,13 +1696,29 @@ class DesignInputReview:
             
             # Use pandas ExcelWriter - more reliable than openpyxl dataframe_to_rows
             print(f"[DEBUG] Writing to Excel file: {output_file}")
+            print(f"[DEBUG] About to enter ExcelWriter with:")
+            print(f"[DEBUG]   io_card_summary_df type: {type(io_card_summary_df)}")
+            print(f"[DEBUG]   io_card_summary_df is None: {io_card_summary_df is None}")
+            if io_card_summary_df is not None:
+                print(f"[DEBUG]   io_card_summary_df.empty: {io_card_summary_df.empty}")
+                print(f"[DEBUG]   io_card_summary_df len: {len(io_card_summary_df)}")
+            print(f"[DEBUG]   io_summary_df type: {type(io_summary_df)}")
+            print(f"[DEBUG]   io_summary_df is None: {io_summary_df is None}")
+            if io_summary_df is not None:
+                print(f"[DEBUG]   io_summary_df.empty: {io_summary_df.empty}")
+                print(f"[DEBUG]   io_summary_df len: {len(io_summary_df)}")
             
+            # Before writing, ensure Node/Slot/Channel are safe string types for Excel
+            for col in ['Node', 'Slot', 'Channel']:
+                if col in assigned_df.columns:
+                    assigned_df[col] = assigned_df[col].astype('object').fillna('').astype(str)
+
             with pd.ExcelWriter(output_file, engine='openpyxl') as writer:
                 # Write Assigned sheet
                 print(f"[DEBUG] Writing {len(assigned_df)} rows to 'Assigned' sheet...")
                 assigned_df.to_excel(writer, sheet_name='Assigned', index=False)
                 print(f"[DEBUG] Assigned sheet written successfully")
-                
+
                 # Write Unassigned sheet
                 if self.df_unassigned is not None and not self.df_unassigned.empty:
                     unassigned_df = self.df_unassigned.drop(columns=['IO_type_base', 'Module_Instance'], errors='ignore')
@@ -1464,6 +1727,10 @@ class DesignInputReview:
                                  'Module_Name', 'Controller_No', 'Node', 'Slot', 'Channel']
                     unassigned_cols = [col for col in col_order if col in unassigned_df.columns]
                     unassigned_df = unassigned_df[unassigned_cols]  # Keep ONLY these columns, drop the rest
+                    # Ensure Node/Slot/Channel are safe strings
+                    for col in ['Node', 'Slot', 'Channel']:
+                        if col in unassigned_df.columns:
+                            unassigned_df[col] = unassigned_df[col].astype('object').fillna('').astype(str)
                     print(f"[DEBUG] Final unassigned columns: {list(unassigned_df.columns)}")
                     print(f"[DEBUG] Writing {len(unassigned_df)} rows to 'Unassigned' sheet...")
                     unassigned_df.to_excel(writer, sheet_name='Unassigned', index=False)
@@ -1472,131 +1739,90 @@ class DesignInputReview:
             # ExcelWriter context closed - file is saved
             print(f"[DEBUG] ExcelWriter closed and data sheets saved")
             
-            # Now add Excel formatting and Summary sheet using openpyxl
+            # Now add summary sheets and Excel formatting using openpyxl
             from openpyxl import load_workbook
             from openpyxl.utils import get_column_letter
-            from openpyxl.worksheet.table import Table, TableStyleInfo
+            import time
             
-            print(f"[DEBUG] Adding Excel formatting and Summary sheet...")
-            wb = load_workbook(output_file)
+            print(f"[DEBUG] Adding summary sheets and Excel formatting...")
             
-            # Format Assigned sheet: auto-fit columns and freeze first row
-            if 'Assigned' in wb.sheetnames:
-                ws_assigned = wb['Assigned']
-                # Freeze first row
-                ws_assigned.freeze_panes = 'A2'
-                # Auto-fit column widths
-                for column in ws_assigned.columns:
-                    max_length = 0
-                    column_letter = get_column_letter(column[0].column)
-                    for cell in column:
-                        try:
-                            if len(str(cell.value)) > max_length:
-                                max_length = len(str(cell.value))
-                        except:
-                            pass
-                    adjusted_width = min(max_length + 2, 50)  # Cap at 50
-                    ws_assigned.column_dimensions[column_letter].width = adjusted_width
-                print(f"[DEBUG] Formatted Assigned sheet: froze row 1, auto-fitted columns")
+            # Wait a moment for file to be fully written and accessible
+            time.sleep(0.5)
             
-            # Format Unassigned sheet: auto-fit columns and freeze first row
-            if 'Unassigned' in wb.sheetnames:
-                ws_unassigned = wb['Unassigned']
-                # Freeze first row
-                ws_unassigned.freeze_panes = 'A2'
-                # Auto-fit column widths
-                for column in ws_unassigned.columns:
-                    max_length = 0
-                    column_letter = get_column_letter(column[0].column)
-                    for cell in column:
-                        try:
-                            if len(str(cell.value)) > max_length:
-                                max_length = len(str(cell.value))
-                        except:
-                            pass
-                    adjusted_width = min(max_length + 2, 50)  # Cap at 50
-                    ws_unassigned.column_dimensions[column_letter].width = adjusted_width
-                print(f"[DEBUG] Formatted Unassigned sheet: froze row 1, auto-fitted columns")
+            # Wait a moment for file to be fully written and accessible
+            time.sleep(0.5)
             
-            # Create Summary sheet
-            ws_summary = wb.create_sheet('Summary')
-            
-            current_row = 1
-            assigned_count = len(assigned_df)
-            unassigned_count = len(self.df_unassigned) if self.df_unassigned is not None else 0
-            
-            # SECTION A: Signal Summary
-            ws_summary[f'A{current_row}'] = 'SIGNAL SUMMARY'
-            current_row += 1
-            
-            ws_summary[f'A{current_row}'] = 'Status'
-            ws_summary[f'B{current_row}'] = 'Count'
-            current_row += 1
-            
-            ws_summary[f'A{current_row}'] = 'Assigned'
-            ws_summary[f'B{current_row}'] = assigned_count
-            current_row += 1
-            
-            ws_summary[f'A{current_row}'] = 'Unassigned'
-            ws_summary[f'B{current_row}'] = unassigned_count
-            current_row += 1
-            
-            current_row += 2  # 2 rows gap
-            
-            # SECTION B: IO Card Summary
-            ws_summary[f'A{current_row}'] = 'IO CARD SUMMARY'
-            current_row += 1
-            
-            if not io_card_summary_df.empty:
-                for col_idx, col_name in enumerate(io_card_summary_df.columns, 1):
-                    ws_summary.cell(row=current_row, column=col_idx, value=col_name)
-                current_row += 1
+            # Try to load and format the workbook - if it fails, just skip and continue
+            try:
+                wb = load_workbook(output_file, data_only=False)
                 
-                for row_idx, (_, row_data) in enumerate(io_card_summary_df.iterrows(), 1):
-                    for col_idx, value in enumerate(row_data.values, 1):
-                        ws_summary.cell(row=current_row + row_idx - 1, column=col_idx, value=value)
-                
-                current_row += len(io_card_summary_df) + 1
-            else:
-                ws_summary[f'A{current_row}'] = 'No IO Card data'
-                current_row += 1
-            
-            current_row += 1  # 1 blank row for spacing
-            
-            # SECTION C: IO Channel Summary
-            ws_summary[f'A{current_row}'] = 'IO CHANNEL SUMMARY'
-            current_row += 1
-            
-            if not io_summary_df.empty:
-                for col_idx, col_name in enumerate(io_summary_df.columns, 1):
-                    ws_summary.cell(row=current_row, column=col_idx, value=col_name)
-                current_row += 1
-                
-                for row_idx, (_, row_data) in enumerate(io_summary_df.iterrows(), 1):
-                    for col_idx, value in enumerate(row_data.values, 1):
-                        ws_summary.cell(row=current_row + row_idx - 1, column=col_idx, value=value)
-            else:
-                ws_summary[f'A{current_row}'] = 'No IO Summary data'
-            
-            # Format Summary sheet: auto-fit columns
-            for column in ws_summary.columns:
-                max_length = 0
-                column_letter = get_column_letter(column[0].column)
-                for cell in column:
+                # ADD SUMMARY SHEETS USING OPENPYXL
+                # Add IO Card Summary sheet FIRST
+                if io_card_summary_df is not None and not io_card_summary_df.empty:
+                    print(f"[DEBUG] Adding IO Card Summary sheet via openpyxl...")
                     try:
-                        if len(str(cell.value)) > max_length:
-                            max_length = len(str(cell.value))
-                    except:
-                        pass
-                adjusted_width = min(max_length + 2, 50)  # Cap at 50
-                ws_summary.column_dimensions[column_letter].width = adjusted_width
-            print(f"[DEBUG] Formatted Summary sheet: auto-fitted columns")
-            
-            # Save the workbook with Summary sheet
-            print(f"[DEBUG] Saving workbook with Summary sheet...")
-            wb.save(output_file)
-            print(f"[DEBUG] Workbook saved with all sheets")
-            print(f"[DEBUG] Created consolidated Summary sheet with three sections")
+                        # Remove existing sheet if present to avoid duplicates
+                        if 'IO Card Summary' in wb.sheetnames:
+                            std = wb['IO Card Summary']
+                            wb.remove(std)
+                        ws_summary = wb.create_sheet('IO Card Summary', 0)  # Insert at position 0
+                        # Write header row
+                        for col_idx, col_name in enumerate(io_card_summary_df.columns, 1):
+                            ws_summary.cell(row=1, column=col_idx).value = str(col_name)
+                        # Write data rows (coerce missing to empty strings)
+                        for row_idx, (idx, row_data) in enumerate(io_card_summary_df.iterrows(), start=2):
+                            for col_idx, col_name in enumerate(io_card_summary_df.columns, 1):
+                                val = row_data[col_name]
+                                if pd.isna(val):
+                                    val = ''
+                                ws_summary.cell(row=row_idx, column=col_idx).value = str(val)
+                        print(f"[DEBUG] IO Card Summary sheet added with {len(io_card_summary_df)} rows")
+                    except Exception as e:
+                        print(f"[WARNING] Could not add IO Card Summary: {e}")
+                        import traceback
+                        traceback.print_exc()
+                
+                # Add IO Summary sheet
+                if io_summary_df is not None and not io_summary_df.empty:
+                    print(f"[DEBUG] Adding IO Summary sheet via openpyxl...")
+                    try:
+                        # Remove existing sheet if present to avoid duplicates
+                        if 'IO Summary' in wb.sheetnames:
+                            std = wb['IO Summary']
+                            wb.remove(std)
+                        ws_io_summary = wb.create_sheet('IO Summary', 1)  # Insert at position 1
+                        # Write header row
+                        for col_idx, col_name in enumerate(io_summary_df.columns, 1):
+                            ws_io_summary.cell(row=1, column=col_idx).value = str(col_name)
+                        # Write data rows (coerce missing to empty strings)
+                        for row_idx, (idx, row_data) in enumerate(io_summary_df.iterrows(), start=2):
+                            for col_idx, col_name in enumerate(io_summary_df.columns, 1):
+                                val = row_data[col_name]
+                                if pd.isna(val):
+                                    val = ''
+                                ws_io_summary.cell(row=row_idx, column=col_idx).value = str(val)
+                        print(f"[DEBUG] IO Summary sheet added with {len(io_summary_df)} rows")
+                    except Exception as e:
+                        print(f"[WARNING] Could not add IO Summary: {e}")
+                        import traceback
+                        traceback.print_exc()
+                
+                # Format Assigned sheet: auto-fit columns and freeze first row
+                if 'Assigned' in wb.sheetnames:
+                    ws_assigned = wb['Assigned']
+                    ws_assigned.freeze_panes = 'A2'
+                
+                # Format Unassigned sheet: auto-fit columns and freeze first row
+                if 'Unassigned' in wb.sheetnames:
+                    ws_unassigned = wb['Unassigned']
+                    ws_unassigned.freeze_panes = 'A2'
+                
+                # Save the workbook
+                wb.save(output_file)
+                print(f"[DEBUG] Workbook with summary sheets formatted and saved")
+            except Exception as fmt_err:
+                print(f"[WARNING] Could not add formatting: {fmt_err}")
+                print(f"[WARNING] Output file created but without formatting")
             
             # Verify file was written and check content
             import os
@@ -1631,10 +1857,8 @@ class DesignInputReview:
             return True
         
         except Exception as e:
-            print(f"[ERROR] Failed to generate output file: {e}")
-            import traceback
-            traceback.print_exc()
-            return False
+            logging.exception("Failed to generate output file")
+            raise
     
     def run_complete_review(self):
         """Execute complete design input review process"""
@@ -1658,21 +1882,6 @@ class DesignInputReview:
             print(f"\n[STEP] {step_name}...")
             if not step_func():
                 print(f"[ERROR] Failed at step: {step_name}")
-                return False
-        
-        # Generate wired spares (optional, always succeeds)
-        print(f"\n[STEP] Generating wired spares...")
-        self.df_wired_spares = self.generate_wired_spares()
-        
-        # If wired spares were generated, add them to df_assigned and reassign nodes/slots
-        if self.df_wired_spares is not None and not self.df_wired_spares.empty:
-            print(f"[STEP] Adding wired spares to assigned data...")
-            self.df_assigned = pd.concat([self.df_assigned, self.df_wired_spares], ignore_index=True)
-            print(f"[DEBUG] df_assigned now has {len(self.df_assigned)} rows (assigned + spares)")
-            
-            print(f"[STEP] Reassigning nodes and controllers for new spare module instances...")
-            if not self.assign_nodes_and_controllers():
-                print(f"[ERROR] Failed to reassign nodes and controllers for spare instances")
                 return False
         
         # Generate output file

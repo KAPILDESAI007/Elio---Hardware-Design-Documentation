@@ -185,7 +185,11 @@ class ChannelAssignmentManager:
             # Use the first matching module that still has capacity
             module_assigned = False
             for module_plan in matching_modules:
-                if module_plan['channels_used'] < module_plan['capacity']:
+                # Check both capacity and usable_channels constraint (requirement #10)
+                usable_limit = module_plan.get('usable_channels_limit', module_plan['capacity'])
+                
+                # CRITICAL: Check BOTH capacity AND Usable_Channels limit
+                if module_plan['channels_used'] < module_plan['capacity'] and module_plan['channels_used'] < usable_limit:
                     # Assign to this module
                     channel = module_plan['channels_used'] + 1
                     module_name = module_plan['module_name']
@@ -210,21 +214,34 @@ class ChannelAssignmentManager:
                     module_assigned = True
                     logger.debug(f"  - Assigned {pid_tag} to {module_instance} N{module_plan['node']}S{module_plan['slot']} CH{channel}")
                     break
+                else:
+                    logger.debug(f"  - Skipping module for {pid_tag}: used={module_plan['channels_used']}, capacity={module_plan['capacity']}, usable_limit={usable_limit}")
             
             if not module_assigned:
                 logger.warning(f"  - Could not assign {pid_tag} to any {io_type} module (all full)")
         
         # Step 2: Distribute wired spares evenly across modules
-        spares_per_module = len(spares_df) / len(self.module_allocation_plan) if self.module_allocation_plan else 0
+        # FIX: Use proper distribution calculation - don't truncate, distribute remainder
+        num_modules = len(self.module_allocation_plan)
+        num_spares = len(spares_df)
         spare_idx = 0
         
-        for module_plan in self.module_allocation_plan:
-            spares_for_this_module = int(spares_per_module)
-            remainder = len(spares_df) % len(self.module_allocation_plan)
-            if len(self.module_allocation_plan) > 0 and module_plan == self.module_allocation_plan[remainder - 1]:
+        if num_modules > 0:
+            spares_base_per_module = num_spares // num_modules  # Integer division
+            spares_remainder = num_spares % num_modules         # Remainder to distribute
+        else:
+            spares_base_per_module = 0
+            spares_remainder = 0
+        
+        for module_idx, module_plan in enumerate(self.module_allocation_plan):
+            # Distribute remainder spares to first N modules
+            spares_for_this_module = spares_base_per_module
+            if module_idx < spares_remainder:
                 spares_for_this_module += 1
             
-            for _ in range(spares_for_this_module):
+            logger.debug(f"  [Module {module_idx}] Assigning {spares_for_this_module} spares (base={spares_base_per_module}, remainder_idx={module_idx}/{spares_remainder})")
+            
+            for spare_count in range(spares_for_this_module):
                 if spare_idx >= len(spares_df):
                     break
                 
@@ -232,7 +249,8 @@ class ChannelAssignmentManager:
                 spare_pid = spares_df.at[idx, 'PID_TAG']
                 channel = module_plan['channels_used'] + 1
                 
-                if channel <= module_plan['capacity']:
+                # Check Usable_Channels constraint per requirement #10
+                if channel <= module_plan['capacity'] and channel <= module_plan.get('usable_channels_limit', module_plan['capacity']):
                     module_name = module_plan['module_name']
                     instance_num = module_plan['module_index'] + 1
                     module_instance = f"{module_name}_{instance_num}"
@@ -247,6 +265,8 @@ class ChannelAssignmentManager:
                     module_plan['channels_used'] += 1
                     assignments_made += 1
                     logger.debug(f"  - Assigned wired spare {spare_pid} to N{module_plan['node']}S{module_plan['slot']} CH{channel}")
+                else:
+                    logger.warning(f"  - Cannot assign wired spare {spare_pid}: module at capacity (CH{channel} > limit {module_plan.get('usable_channels_limit', 'N/A')})")
                 
                 spare_idx += 1
         
@@ -298,7 +318,18 @@ class ChannelAssignmentManager:
         # Use first available module specs
         row = self.df_hardware.iloc[0]
         
-        channels = int(row.get('Nos of Channel', 16)) if pd.notna(row.get('Nos of Channel')) else 16
+        # Per design requirement #10: Use Usable_Channels for constraint validation
+        # Usable_Channels is the maximum allowed channels per module (from IO_Module_Catalog)
+        if 'Usable_Channels' in row.index and pd.notna(row['Usable_Channels']):
+            channels = int(row['Usable_Channels'])
+            logger.info(f"[ChannelAssignmentManager] Using Usable_Channels constraint: {channels} channels/module")
+        elif 'Nos of Channel' in row.index and pd.notna(row['Nos of Channel']):
+            channels = int(row['Nos of Channel'])
+            logger.warning(f"[ChannelAssignmentManager] Usable_Channels not found, using Nos of Channel: {channels}")
+        else:
+            channels = 16  # Default fallback
+            logger.warning(f"[ChannelAssignmentManager] No channel info found, using default: {channels}")
+        
         module_name = str(row.get('Module', 'FIO')).strip()
         
         return {
@@ -317,11 +348,23 @@ class ChannelAssignmentManager:
     ) -> List[Dict]:
         """
         Create a module allocation plan.
+        Per design requirement #10: Validate against Usable_Channels constraint
         
         Returns:
             List of module plan dicts
         """
         plan = []
+        
+        # Get Usable_Channels limit per design requirement #10
+        usable_channels_limit = channels_per_module
+        if not self.df_hardware.empty and 'Usable_Channels' in self.df_hardware.columns:
+            hw_row = self.df_hardware.iloc[0]
+            if pd.notna(hw_row.get('Usable_Channels')):
+                usable_channels_limit = int(hw_row['Usable_Channels'])
+                logger.info(f"[ChannelAssignmentManager] Usable_Channels constraint set to {usable_channels_limit}")
+        
+        # Use the more restrictive limit (usable vs capacity)
+        effective_capacity = min(channels_per_module, usable_channels_limit)
         
         # Determine which module types we have
         module_types = signal_groups.keys()
@@ -341,7 +384,8 @@ class ChannelAssignmentManager:
                 'slot': current_slot,
                 'io_type': io_type,
                 'module_name': self.df_hardware.iloc[0].get('Module', 'FIO') if not self.df_hardware.empty else 'FIO',
-                'capacity': channels_per_module,
+                'capacity': effective_capacity,  # Use effective capacity with Usable_Channels constraint
+                'usable_channels_limit': usable_channels_limit,  # Store limit for reference
                 'channels_used': 0,
                 'assigned_signals': [],
                 'assigned_spares': []
@@ -353,12 +397,13 @@ class ChannelAssignmentManager:
                 current_slot = 1
                 current_node += 1
         
-        logger.info(f"[ChannelAssignmentManager] Created allocation plan with {len(plan)} modules")
+        logger.info(f"[ChannelAssignmentManager] Created allocation plan with {len(plan)} modules (effective capacity: {effective_capacity})")
         return plan
     
     def get_summary_report(self) -> str:
         """
         Generate a summary report of the allocation plan.
+        Per design requirement #10: Display Usable_Channels constraint validation.
         
         Returns:
             Formatted string with summary
@@ -376,17 +421,35 @@ class ChannelAssignmentManager:
         report.append(f"Wired Spares per Module: {self.wired_spares_per_module:.2f}")
         
         report.append("\n" + "-" * 100)
-        report.append("MODULE ALLOCATION DETAILS:")
+        report.append("MODULE ALLOCATION DETAILS (with Usable_Channels constraint per Requirement #10):")
         report.append("-" * 100)
         
+        constraint_violations = 0
         for plan in self.module_allocation_plan:
+            usable_limit = plan.get('usable_channels_limit', plan['capacity'])
+            violation = plan['channels_used'] > usable_limit
+            violation_marker = " ⚠ CONSTRAINT VIOLATED" if violation else ""
+            
             report.append(f"\nModule {plan['module_index'] + 1}:")
             report.append(f"  Location: Node {plan['node']}, Slot {plan['slot']}")
             report.append(f"  Type: {plan['io_type']}")
             report.append(f"  Capacity: {plan['capacity']} channels")
-            report.append(f"  Assigned: {plan['channels_used']} channels")
-            report.append(f"  Available: {plan['capacity'] - plan['channels_used']} channels")
+            report.append(f"  Usable_Channels Limit: {usable_limit} channels")
+            report.append(f"  Assigned: {plan['channels_used']} channels{violation_marker}")
+            report.append(f"  Available: {max(0, plan['capacity'] - plan['channels_used'])} channels")
             report.append(f"  Signals: {len(plan['assigned_signals'])}")
+            
+            if violation:
+                constraint_violations += 1
+        
+        if constraint_violations > 0:
+            report.append("\n" + "!" * 100)
+            report.append(f"⚠ WARNING: {constraint_violations} module(s) exceed Usable_Channels constraint!")
+            report.append("!" * 100)
+        else:
+            report.append("\n" + "✓" * 50)
+            report.append("✓ All modules comply with Usable_Channels constraint (Requirement #10)")
+            report.append("✓" * 50)
         
         report.append("\n" + "=" * 100)
         return "\n".join(report)
