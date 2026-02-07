@@ -128,6 +128,7 @@ class PIDTagFiller:
                 slot_p = row_data.get('SLOT_P')
                 channel = row_data.get('CHANNEL')
                 pid_tag = row_data.get('PID_TAG')
+                redundancy_flag = row_data.get('REDUNDANCY_FLAG', 'No')
                 
                 if pd.isna(slot_p) or pd.isna(channel) or pd.isna(pid_tag):
                     continue
@@ -143,6 +144,17 @@ class PIDTagFiller:
                 
                 col_idx = slot_data_cols[slot_p]
                 row_idx = channel_row_map[channel]
+                
+                # Check if cell already has a tag assigned
+                existing_value = ws.cell(row=row_idx, column=col_idx).value
+                if existing_value and str(existing_value).strip() != '':
+                    logger.debug(f"Cell ({row_idx},{col_idx}) already has tag '{existing_value}', skipping {pid_tag}")
+                    continue
+                
+                # Check for redundancy: if Redundancy_Flag=Yes, even slots are reserved
+                if str(redundancy_flag).strip().upper() == 'YES' and slot_p % 2 == 0:
+                    logger.debug(f"Slot {slot_p} is EVEN and reserved for redundancy, skipping {pid_tag}")
+                    continue
                 
                 ExcelManager.write_cell_safe(ws, row_idx, col_idx, str(pid_tag))
                 pid_tags_written += 1

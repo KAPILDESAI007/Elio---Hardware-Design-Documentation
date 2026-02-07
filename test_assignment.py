@@ -31,8 +31,8 @@ if not reviewer.read_hardware_config():
     print("Failed to read hardware")
     sys.exit(1)
 
-if not reviewer.assign_modules():
-    print("Failed to assign modules")
+if not reviewer.assign_modules_intelligent():
+    print("Failed to assign modules intelligently")
     sys.exit(1)
 
 if not reviewer.read_fio_config():

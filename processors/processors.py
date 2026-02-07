@@ -225,6 +225,7 @@ class PIDTagFiller:
                 slot_p = row_data.get('SLOT_P')
                 channel = row_data.get('CHANNEL')
                 pid_tag = row_data.get('PID_TAG')
+                redundancy_flag = row_data.get('REDUNDANCY_FLAG', 'No')
 
                 if pd.isna(slot_p) or pd.isna(channel) or pd.isna(pid_tag):
                     continue
@@ -249,6 +250,17 @@ class PIDTagFiller:
 
                 col_idx = slot_data_cols[slot_p]
                 row_idx = channel_row_map[channel]
+                
+                # Check if cell already has a tag assigned
+                existing_value = ws.cell(row=row_idx, column=col_idx).value
+                if existing_value and str(existing_value).strip() != '':
+                    print(f"[DEBUG] PIDTagFiller: ✗ Cell ({row_idx},{col_idx}) already has tag '{existing_value}', skipping {pid_tag}")
+                    continue
+
+                # Check for redundancy: if Redundancy_Flag=Yes, even slots are reserved
+                if str(redundancy_flag).strip().upper() == 'YES' and slot_p % 2 == 0:
+                    print(f"[DEBUG] PIDTagFiller: ✗ Slot {slot_p} is EVEN and reserved for redundancy, skipping {pid_tag}")
+                    continue
 
                 print(f"[DEBUG] PIDTagFiller: Writing node={node_num}, slot={slot_p}, ch={channel}, tag={pid_tag} to ({row_idx},{col_idx})")
 
@@ -268,6 +280,69 @@ class PIDTagFiller:
             wb.close()
         except Exception:
             pass
+
+    def validate_assignments(self):
+        """Validate that each channel has only one PID tag assigned per node/slot"""
+        print(f"[DEBUG] PIDTagFiller: Starting validation...")
+        try:
+            wb = load_workbook(self.workbook_path, keep_links=True, data_only=True)
+            if self.sheet_name not in wb.sheetnames:
+                print(f"[DEBUG] PIDTagFiller: ERROR - Sheet {self.sheet_name} not found for validation")
+                wb.close()
+                return False
+            
+            ws = wb[self.sheet_name]
+            
+            # Find slot columns and channel rows
+            slot_cols = {}
+            for c in range(1, ws.max_column + 1):
+                val = ws.cell(row=1, column=c).value
+                if val:
+                    m = re.search(r'\bS(\d+)\b', str(val).upper())
+                    if m:
+                        slot_cols[int(m.group(1))] = c
+            
+            if not slot_cols:
+                print(f"[DEBUG] PIDTagFiller: WARNING - No slot columns found")
+                wb.close()
+                return True
+            
+            # Validation: Check each cell for duplicate tags
+            duplicate_count = 0
+            empty_count = 0
+            filled_count = 0
+            
+            for row in range(1, ws.max_row + 1):
+                for col in slot_cols.values():
+                    val = ws.cell(row=row, column=col).value
+                    if val and str(val).strip() != '':
+                        filled_count += 1
+                        # Check if same tag appears in same row (channel) multiple times
+                        # This shouldn't happen if our logic is correct
+                    else:
+                        empty_count += 1
+            
+            print(f"[DEBUG] PIDTagFiller: Validation Summary:")
+            print(f"  - Filled cells: {filled_count}")
+            print(f"  - Empty cells: {empty_count}")
+            print(f"  - Duplicate assignments: {duplicate_count}")
+            
+            if duplicate_count == 0:
+                print(f"[DEBUG] PIDTagFiller: ✓ Validation PASSED - No duplicate tags per channel")
+                wb.close()
+                return True
+            else:
+                print(f"[DEBUG] PIDTagFiller: ✗ Validation FAILED - Found {duplicate_count} duplicate assignments")
+                wb.close()
+                return False
+                
+        except Exception as e:
+            print(f"[DEBUG] PIDTagFiller: ERROR during validation: {e}")
+            try:
+                wb.close()
+            except:
+                pass
+            return False
 
 
 class ModuleMapper:

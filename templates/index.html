@@ -147,6 +147,20 @@
                                 <small>Used if Controller_Model column is not available in file</small>
                             </div>
 
+                            <!-- IO Types Selection -->
+                            <div class="form-group">
+                                <label>IO Types</label>
+                                <small>Select module types to use for assignment</small>
+                                <div class="checkbox-group">
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" name="io_types" value="FIO" checked> FIO (Field I/O Modules)
+                                    </label>
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" name="io_types" value="NIO"> NIO (Network I/O Modules)
+                                    </label>
+                                </div>
+                            </div>
+
                             <!-- Explosion Protection Selection -->
                             <div class="form-group">
                                 <label for="explosionProtection">Explosion Protection</label>

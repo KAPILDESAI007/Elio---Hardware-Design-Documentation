@@ -152,6 +152,11 @@ document.getElementById('designForm').addEventListener('submit', async (e) => {
     formData.append('explosion_protection', document.getElementById('explosionProtection').value);
     formData.append('temperature_rating', document.getElementById('temperatureRating').value);
     
+    // Get selected IO types
+    const ioTypes = Array.from(document.querySelectorAll('input[name="io_types"]:checked'))
+        .map(cb => cb.value);
+    formData.append('io_types', JSON.stringify(ioTypes));
+    
     // Get selected redundancy types
     const redundancyTypes = Array.from(document.querySelectorAll('input[name="redundancy_types"]:checked'))
         .map(cb => cb.value);

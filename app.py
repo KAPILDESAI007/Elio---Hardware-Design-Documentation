@@ -189,6 +189,7 @@ def design_input_review():
         temperature_rating = request.form.get('temperature_rating', '')
         redundancy_types = []
         is_types = []
+        io_types = []
         wired_spares = None
         
         # Parse JSON arrays from form data
@@ -199,6 +200,9 @@ def design_input_review():
             
             is_str = request.form.get('is_types', '[]')
             is_types = json.loads(is_str) if is_str else []
+            
+            io_types_str = request.form.get('io_types', '[]')
+            io_types = json.loads(io_types_str) if io_types_str else ['FIO']
         except json.JSONDecodeError:
             logger.warning("Failed to parse checkbox selections")
         
@@ -214,6 +218,7 @@ def design_input_review():
         logger.info(f"  Controller Model: {controller_model}")
         logger.info(f"  Explosion Protection: {explosion_protection}")
         logger.info(f"  Temperature Rating: {temperature_rating}")
+        logger.info(f"  IO Types: {io_types}")
         logger.info(f"  Redundancy Types: {redundancy_types}")
         logger.info(f"  IS Types: {is_types}")
         logger.info(f"  Wired Spares %: {wired_spares}")
@@ -226,11 +231,16 @@ def design_input_review():
             temperature_rating=temperature_rating if temperature_rating else None,
             redundancy_types=redundancy_types,
             is_types=is_types,
-            wired_spares=wired_spares
+            wired_spares=wired_spares,
+            io_types=io_types if io_types else ['FIO']
         )
         
         # Override project dir to use the uploaded file
         reviewer.df_instruments = pd.read_excel(input_path)
+        logger.info(f"[FILE READ DEBUG] Input file shape: {reviewer.df_instruments.shape}")
+        logger.info(f"[FILE READ DEBUG] Input file columns: {list(reviewer.df_instruments.columns)}")
+        logger.info(f"[FILE READ DEBUG] First few rows:")
+        logger.info(f"{reviewer.df_instruments.head().to_string()}")
         
         # Execute review steps
         if not reviewer.extract_required_columns():
@@ -251,6 +261,12 @@ def design_input_review():
         if not reviewer.read_controller_limits():
             raise Exception("Failed to read controller limits")
         
+        # DEBUG: Log state before assign_modules
+        logger.info(f"[PRE-ASSIGN DEBUG] df_instruments shape: {reviewer.df_instruments.shape if reviewer.df_instruments is not None else 'None'}")
+        logger.info(f"[PRE-ASSIGN DEBUG] df_instruments columns: {list(reviewer.df_instruments.columns) if reviewer.df_instruments is not None else 'None'}")
+        logger.info(f"[PRE-ASSIGN DEBUG] df_hardware shape: {reviewer.df_hardware.shape if reviewer.df_hardware is not None else 'None'}")
+        logger.info(f"[PRE-ASSIGN DEBUG] IO_type_base unique: {list(reviewer.df_instruments['IO_type_base'].unique()) if reviewer.df_instruments is not None and 'IO_type_base' in reviewer.df_instruments.columns else 'None'}")
+        
         if not reviewer.assign_modules():
             raise Exception("Failed to assign modules")
         
@@ -265,6 +281,14 @@ def design_input_review():
         
         # Generate wired spares if percentage was provided
         reviewer.df_wired_spares = reviewer.generate_wired_spares()
+        
+        # If wired spares were generated, add them to df_assigned and reassign nodes/slots
+        if reviewer.df_wired_spares is not None and not reviewer.df_wired_spares.empty:
+            logger.info(f"Adding {len(reviewer.df_wired_spares)} wired spares to assigned data")
+            reviewer.df_assigned = pd.concat([reviewer.df_assigned, reviewer.df_wired_spares], ignore_index=True)
+            logger.info(f"Reassigning nodes and controllers for wired spare module instances")
+            if not reviewer.assign_nodes_and_controllers():
+                raise Exception("Failed to reassign nodes and controllers for spare instances")
         
         if not reviewer.generate_output_file():
             raise Exception("Failed to generate output file")

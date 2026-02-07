@@ -4,6 +4,14 @@ from pathlib import Path
 from datetime import datetime
 from openpyxl import load_workbook, Workbook
 from openpyxl.utils.dataframe import dataframe_to_rows
+import sys
+
+# Add processors to path for imports
+processors_dir = Path(__file__).parent / "processors"
+if str(processors_dir) not in sys.path:
+    sys.path.insert(0, str(processors_dir))
+
+from channel_assignment_manager import ChannelAssignmentManager
 
 
 class DesignInputReview:
@@ -13,7 +21,7 @@ class DesignInputReview:
     """
     
     def __init__(self, system_type=None, controller_model=None, explosion_protection=None, 
-                 temperature_rating=None, redundancy_types=None, is_types=None, wired_spares=None):
+                 temperature_rating=None, redundancy_types=None, is_types=None, wired_spares=None, io_types=None):
         self.project_dir = Path(r"C:\Working\Others\Python\Cloud App Projects")
         self.df_instruments = None
         self.df_hardware = None
@@ -32,6 +40,7 @@ class DesignInputReview:
         self.controller_model = controller_model  # Controller model selection
         self.explosion_protection = explosion_protection  # Yes/No
         self.temperature_rating = temperature_rating  # Standard/Wide
+        self.io_types = io_types or ['FIO']  # FIO or NIO (can be both)
         self.redundancy_types = redundancy_types or []  # List of IO types to mark as redundant
         self.is_types = is_types or []  # List of IO types to mark as IS
         self.wired_spares_percentage = wired_spares  # Percentage for wired spares
@@ -41,6 +50,7 @@ class DesignInputReview:
         print(f"  controller_model={self.controller_model}")
         print(f"  explosion_protection={self.explosion_protection}")
         print(f"  temperature_rating={self.temperature_rating}")
+        print(f"  io_types={self.io_types}")
         print(f"  wired_spares_percentage={self.wired_spares_percentage}")
     
     def read_instrument_file(self):
@@ -75,19 +85,25 @@ class DesignInputReview:
         if missing_cols:
             print(f"[WARNING] Missing columns: {missing_cols}")
         
-        # Extract available columns
-        available_cols = [col for col in required_cols if col in self.df_instruments.columns]
-        self.df_instruments = self.df_instruments[available_cols].copy()
+        # Extract available columns and keep ALL columns for now
+        # Don't drop missing columns here - apply_user_inputs will handle them
+        print(f"[DEBUG] Available columns: {list(self.df_instruments.columns)}")
         
         # Remove rows with empty PID_TAG
         self.df_instruments = self.df_instruments.dropna(subset=['PID_TAG'])
         self.df_instruments['PID_TAG'] = self.df_instruments['PID_TAG'].astype(str).str.strip()
         
         # Normalize IO_type: convert to uppercase and extract base type
-        self.df_instruments['IO_type'] = self.df_instruments['IO_type'].astype(str).str.upper().str.strip()
-        self.df_instruments['IO_type_base'] = self.df_instruments['IO_type'].apply(self._extract_io_type_base)
+        if 'IO_type' in self.df_instruments.columns:
+            self.df_instruments['IO_type'] = self.df_instruments['IO_type'].astype(str).str.upper().str.strip()
+            self.df_instruments['IO_type_base'] = self.df_instruments['IO_type'].apply(self._extract_io_type_base)
+        else:
+            print("[WARNING] IO_type column not found")
+            self.df_instruments['IO_type'] = ''
+            self.df_instruments['IO_type_base'] = ''
         
         print(f"[DEBUG] Extracted {len(self.df_instruments)} rows with required columns")
+        print(f"[DEBUG] IO_type_base values: {self.df_instruments['IO_type_base'].unique() if len(self.df_instruments) > 0 else 'NONE'}")
         return True
     
     def apply_user_inputs(self):
@@ -101,6 +117,11 @@ class DesignInputReview:
             print("[ERROR] Instrument data not loaded")
             return False
         
+        # Ensure PID_TAG exists
+        if 'PID_TAG' not in self.df_instruments.columns:
+            print("[ERROR] PID_TAG column is required but missing")
+            return False
+        
         # Handle signal_origin column (fallback to system_type)
         if 'signal_origin' not in self.df_instruments.columns:
             if self.system_type:
@@ -108,6 +129,16 @@ class DesignInputReview:
                 self.df_instruments['signal_origin'] = self.system_type
             else:
                 print("[WARNING] signal_origin column missing and no system_type provided")
+                self.df_instruments['signal_origin'] = 'UNKNOWN'
+        
+        # Handle IO_type column (critical - must exist)
+        if 'IO_type' not in self.df_instruments.columns or self.df_instruments['IO_type'].isna().all() or (self.df_instruments['IO_type'] == '').all():
+            print("[ERROR] IO_type column is required but missing or empty")
+            return False
+        
+        # Ensure IO_type_base exists
+        if 'IO_type_base' not in self.df_instruments.columns:
+            self.df_instruments['IO_type_base'] = self.df_instruments['IO_type'].apply(self._extract_io_type_base)
         
         # Handle IO_REDUNDANCY column (fallback to redundancy_types)
         if 'IO_REDUNDANCY' not in self.df_instruments.columns:
@@ -119,6 +150,9 @@ class DesignInputReview:
             else:
                 print("[WARNING] IO_REDUNDANCY column missing and no redundancy_types provided")
                 self.df_instruments['IO_REDUNDANCY'] = ''
+        else:
+            # Fill any NaN values in IO_REDUNDANCY
+            self.df_instruments['IO_REDUNDANCY'] = self.df_instruments['IO_REDUNDANCY'].fillna('')
         
         # Handle IS_Non_IS column (fallback to is_types)
         if 'IS_Non_IS' not in self.df_instruments.columns:
@@ -130,6 +164,9 @@ class DesignInputReview:
             else:
                 print("[WARNING] IS_Non_IS column missing and no is_types provided")
                 self.df_instruments['IS_Non_IS'] = 'NIS'
+        else:
+            # Fill any NaN values in IS_Non_IS
+            self.df_instruments['IS_Non_IS'] = self.df_instruments['IS_Non_IS'].fillna('NIS')
         
         # Handle Controller_Model column (fallback to controller_model user input)
         if 'Controller_Model' not in self.df_instruments.columns:
@@ -138,6 +175,10 @@ class DesignInputReview:
                 self.df_instruments['Controller_Model'] = self.controller_model
             else:
                 print("[WARNING] Controller_Model column missing and no controller_model provided")
+        
+        print(f"[DEBUG] Applied user inputs. Data shape: {self.df_instruments.shape}")
+        print(f"[DEBUG] IO_type_base unique values: {self.df_instruments['IO_type_base'].unique()}")
+        return True
         
         # Apply Controller_Model to map System_Type for ESD and FGS (should be mapped to Safety)
         if self.read_controller_limits():
@@ -312,15 +353,33 @@ class DesignInputReview:
         try:
             # Read IO_Module_Catalog sheet
             self.df_hardware = pd.read_excel(file_path, sheet_name='IO_Module_Catalog')
+            print(f"[DEBUG] Total rows in IO_Module_Catalog: {len(self.df_hardware)}")
             
-            # Filter for FIO family modules only
-            self.df_hardware = self.df_hardware[self.df_hardware['Family'] == 'FIO'].copy()
+            # Filter for selected IO Types (FIO, NIO, or both)
+            if self.io_types and len(self.io_types) > 0:
+                print(f"[DEBUG] Filtering by io_types: {self.io_types}")
+                self.df_hardware = self.df_hardware[self.df_hardware['Family'].isin(self.io_types)].copy()
+                print(f"[DEBUG] Filtered to {self.io_types} modules: {len(self.df_hardware)} rows")
+                if self.df_hardware.empty:
+                    print(f"[WARNING] After filtering by io_types, no modules found. Available families: {self.df_hardware if not pd.DataFrame(self.df_hardware).empty else 'NONE'}")
+            else:
+                # Default to FIO only
+                print(f"[DEBUG] No io_types specified, defaulting to FIO")
+                self.df_hardware = self.df_hardware[self.df_hardware['Family'] == 'FIO'].copy()
+                print(f"[DEBUG] Filtered to FIO modules only (default): {len(self.df_hardware)} rows")
+                if self.df_hardware.empty:
+                    print(f"[WARNING] After filtering to FIO, no modules found")
             
             # Drop duplicate module/IO_Type combinations (keep first occurrence)
             self.df_hardware = self.df_hardware.drop_duplicates(subset=['Module', 'IO_Type'], keep='first')
+            print(f"[DEBUG] After deduplication: {len(self.df_hardware)} modules")
             
             # Normalize IO_Type in hardware config
             self.df_hardware['IO_Type'] = self.df_hardware['IO_Type'].astype(str).str.upper().str.strip()
+            
+            if self.df_hardware.empty:
+                print(f"[ERROR] No hardware modules available after filtering and deduplication")
+                return False
             
             # Create a standard 'Nos of Channel' column if it doesn't exist (use Nominal_Channels)
             if 'Nos of Channel' not in self.df_hardware.columns:
@@ -342,208 +401,313 @@ class DesignInputReview:
     
     def assign_modules(self):
         """
-        Assign instruments to modules with comprehensive constraints:
-        1. Redundancy: For redundant signals, use odd channels (1,3,5,7...) and leave even channels empty (2,4,6,8...)
-        2. IS/NIS: All {IO_Type}-IS in one module, all {IO_Type}-NIS in separate module
-        3. HART: Filter based on Supports_HART
-        4. Temperature: Adjust capacity based on ambient_Max_C and temperature_rating
-        5. Slots fill sequentially, regardless of redundancy
+        Assign instruments to modules with comprehensive constraints.
+        Validates: Temperature Rating, Explosion Protection, Usable Channels, Module capacity
         """
-        print("[DEBUG] Assigning instruments to modules with comprehensive constraints...")
-        
-        if self.df_instruments is None or self.df_hardware is None:
-            print("[ERROR] Required data not loaded")
-            return False
-        
-        # Prepare assignment dataframe
-        self.df_assigned = self.df_instruments.copy()
-        self.df_assigned['Module_Name'] = ""
-        self.df_assigned['Module_Instance'] = ""
-        self.df_assigned['Channel'] = 0
-        self.df_assigned['Node'] = ""
-        self.df_assigned['Slot'] = 0
-        self.df_assigned['Controller_No'] = ""
-        self.df_assigned['Redundancy_Flag'] = ""
-        
-        # Create mapping from (IO_type, IS_type) to Module information
-        # Format: {(base_type, is_type): [{'name': module_name, 'capacity': capacity, 'is_hart': bool, 'instances': {}}]}
-        # This ensures all AI-IS are together, all AI-NIS are together, etc.
-        module_map = {}
-        
-        unique_modules = self.df_hardware.drop_duplicates(subset=['Module', 'IO_Type'])
-        print(f"[DEBUG] Processing {len(unique_modules)} unique modules for assignment")
-        
-        for _, row in unique_modules.iterrows():
-            io_type = str(row.get('IO_Type', '')).upper().strip()
-            module_name = str(row.get('Module', '')).strip()
-            nominal_capacity = int(row.get('Nominal_Channels', 16)) if pd.notna(row.get('Nominal_Channels')) else 16
-            usable_capacity = int(row.get('Usable_Channels', 16)) if pd.notna(row.get('Usable_Channels')) else nominal_capacity
-            supports_hart = str(row.get('Supports_HART', '')).strip().lower() == 'yes'
-            ambient_max = float(row.get('Ambient_Max_C', 60)) if pd.notna(row.get('Ambient_Max_C')) else 60
+        try:
+            print("[DEBUG] Assigning instruments to modules with comprehensive constraints...")
             
-            # Adjust capacity based on temperature rating
-            if self.temperature_rating == 'Wide' and ambient_max < 70:
-                capacity = int(usable_capacity * 0.8)
+            if self.df_instruments is None or self.df_hardware is None:
+                print("[ERROR] Required data not loaded")
+                return False
+            
+            # CONSTRAINT 1: Filter hardware based on Temperature Rating and Explosion Protection
+            df_hardware_filtered = self.df_hardware.copy()
+            
+            # Filter by Temperature Rating (if specified)
+            if self.temperature_rating:
+                if self.temperature_rating == 'Wide':
+                    # For Wide temperature, prefer modules with Ambient_Max_C == 70, but allow 60/65 if needed
+                    df_temp_filtered = df_hardware_filtered[
+                        pd.to_numeric(df_hardware_filtered['Ambient_Max_C'], errors='coerce') == 70
+                    ]
+                    if not df_temp_filtered.empty:
+                        df_hardware_filtered = df_temp_filtered
+                        print(f"[DEBUG] Temperature Rating: Wide - filtered to {len(df_hardware_filtered)} modules with Ambient_Max_C=70")
+                    else:
+                        print(f"[DEBUG] Temperature Rating: Wide - No modules with Ambient_Max_C=70, using available modules")
+                elif self.temperature_rating == 'Standard':
+                    # For Standard temperature, prefer modules with Ambient_Max_C == 60 or 65
+                    df_temp_filtered = df_hardware_filtered[
+                        pd.to_numeric(df_hardware_filtered['Ambient_Max_C'], errors='coerce').isin([60, 65])
+                    ]
+                    if not df_temp_filtered.empty:
+                        df_hardware_filtered = df_temp_filtered
+                        print(f"[DEBUG] Temperature Rating: Standard - filtered to {len(df_hardware_filtered)} modules with Ambient_Max_C in [60, 65]")
+                    else:
+                        print(f"[DEBUG] Temperature Rating: Standard - No modules with Ambient_Max_C in [60, 65], using available modules")
+            
+            # Filter by Explosion Protection (if specified)
+            if self.explosion_protection:
+                if self.explosion_protection == 'Yes':
+                    # Filter for modules with Suffix_Explosion specified (non-empty)
+                    df_exp_filtered = df_hardware_filtered[
+                        df_hardware_filtered['Suffix_Explosion'].fillna('').astype(str).str.strip() != ''
+                    ]
+                    if not df_exp_filtered.empty:
+                        df_hardware_filtered = df_exp_filtered
+                        print(f"[DEBUG] Explosion Protection: Yes - filtered to {len(df_hardware_filtered)} explosion-rated modules")
+                    else:
+                        print(f"[DEBUG] Explosion Protection: Yes - No explosion-rated modules, using available modules")
+                elif self.explosion_protection == 'No':
+                    # Exclude modules with Suffix_Explosion
+                    df_exp_filtered = df_hardware_filtered[
+                        df_hardware_filtered['Suffix_Explosion'].fillna('').astype(str).str.strip() == ''
+                    ]
+                    if not df_exp_filtered.empty:
+                        df_hardware_filtered = df_exp_filtered
+                        print(f"[DEBUG] Explosion Protection: No - filtered to {len(df_hardware_filtered)} non-explosion modules")
+                    else:
+                        print(f"[DEBUG] Explosion Protection: No - No non-explosion modules, using available modules")
+            
+            if df_hardware_filtered.empty:
+                print("[ERROR] No modules available in hardware configuration")
+                return False
+            
+            # Calculate wired spares count per signal type (skip SOFT signals - they have no hardware)
+            wired_spares_count = {}
+            total_signal_counts = {}
+            if self.wired_spares_percentage is not None and self.wired_spares_percentage > 0:
+                print(f"[DEBUG] Calculating wired spares per signal type (percentage={self.wired_spares_percentage})")
+                for io_type_base in self.df_instruments['IO_type_base'].unique():
+                    # SKIP SOFT signals - they don't require hardware modules
+                    if 'SOFT' in str(io_type_base).upper():
+                        print(f"[DEBUG]   {io_type_base}: Skipping SOFT signals (no hardware required)")
+                        continue
+                    
+                    signal_count = len(self.df_instruments[self.df_instruments['IO_type_base'] == io_type_base])
+                    spare_count = int(signal_count * (self.wired_spares_percentage / 100))
+                    wired_spares_count[io_type_base] = spare_count
+                    total_signal_counts[io_type_base] = signal_count
+                    total_with_spares = signal_count + spare_count
+                    print(f"[DEBUG]   {io_type_base}: {signal_count} signals + {spare_count} spares = {total_with_spares} total")
             else:
-                capacity = usable_capacity
-            
-            if io_type and module_name:
-                base_type = self._extract_io_type_base(io_type)
-                # Normalize base_type: DI-RL, DI-R all become DI; DO-R becomes DO, etc.
-                base_type_normalized = base_type.split('-')[0]  # Take only first part before dash
-                
-                if base_type_normalized not in module_map:
-                    module_map[base_type_normalized] = []
-                
-                module_map[base_type_normalized].append({
-                    'name': module_name,
-                    'capacity': capacity,
-                    'is_hart': supports_hart,
-                    'instances': {}  # {instance_num: {is_count, nis_count, channels_used, is_redundant}}
-                })
-                print(f"[DEBUG] Added module: {base_type_normalized} -> {module_name} (capacity: {capacity}, HART: {supports_hart})")
-        
-        print(f"[DEBUG] Created module map with {sum(len(v) for v in module_map.values())} modules across {len(module_map)} IO types")
-        
-        # Sort instruments by IO type and IS/NIS to group them together
-        # This helps ensure all AI-IS go together, all AI-NIS go together, etc.
-        self.df_assigned['sort_key'] = (
-            self.df_assigned['IO_type_base'].astype(str) + '_' +
-            self.df_assigned['IS_Non_IS'].astype(str)
-        )
-        
-        # Assign instruments to modules
-        unassigned_count = 0
-        for idx, row in self.df_assigned.iterrows():
-            io_type_base = row.get('IO_type_base', '')
-            # Normalize io_type_base: DI-RL, DI-R → DI; DO-R → DO, etc.
-            io_type_base_normalized = io_type_base.split('-')[0] if io_type_base else ''
-            
-            is_type = row.get('IS_Non_IS', 'NIS')
-            pid_tag = row.get('PID_TAG', 'UNKNOWN')
-            is_redundant = str(row.get('IO_REDUNDANCY', '')).strip() in ['R', 'r', 'Y', 'y', 'Yes', 'YES', 'yes']
-            signal_type = row.get('signal_origin', '')
-            
-            # Check if signal requires HART
-            signal_requires_hart = signal_type in ['HART', 'hart'] or 'HART' in str(row.get('IO_type', ''))
-            
-            if io_type_base_normalized and io_type_base_normalized in module_map:
-                assigned = False
-                
-                # Try each available module for this IO type
-                for module_info in module_map[io_type_base_normalized]:
-                    # Skip HART modules if signal doesn't need HART, or vice versa
-                    if signal_requires_hart and not module_info['is_hart']:
-                        continue
-                    if not signal_requires_hart and module_info['is_hart']:
+                print(f"[DEBUG] No wired spares percentage provided")
+                for io_type_base in self.df_instruments['IO_type_base'].unique():
+                    # SKIP SOFT signals - they don't require hardware modules
+                    if 'SOFT' in str(io_type_base).upper():
+                        print(f"[DEBUG]   {io_type_base}: Skipping SOFT signals (no hardware required)")
                         continue
                     
-                    base_module_name = module_info['name']
-                    capacity = module_info['capacity']
+                    signal_count = len(self.df_instruments[self.df_instruments['IO_type_base'] == io_type_base])
+                    total_signal_counts[io_type_base] = signal_count
+                    print(f"[DEBUG]   {io_type_base}: {signal_count} signals")
+            
+            # CONSTRAINT 2: Calculate number of modules needed for each IO type
+            print(f"[DEBUG] Calculating modules required per IO type...")
+            print(f"[DEBUG] Available columns in filtered hardware: {list(df_hardware_filtered.columns)}")
+            modules_required = {}
+            for io_type_base, total_count in total_signal_counts.items():
+                spare_count = wired_spares_count.get(io_type_base, 0)
+                total_with_spares = total_count + spare_count
+                
+                # Get usable capacity for this IO type
+                df_type_modules = df_hardware_filtered[
+                    df_hardware_filtered['IO_Type'].astype(str).str.upper().str.contains(io_type_base.split('-')[0], na=False)
+                ]
+                if df_type_modules.empty:
+                    print(f"[ERROR] No modules available for {io_type_base}")
+                    print(f"[DEBUG] Looking for IO_Type containing: {io_type_base.split('-')[0]}")
+                    print(f"[DEBUG] Available IO_Types: {df_hardware_filtered['IO_Type'].unique()}")
+                    return False
+                
+                # Try to get usable capacity, fall back to Nominal_Channels or default to 16
+                module_capacity = 16
+                if 'Usable_Channels' in df_hardware_filtered.columns:
+                    cap_val = df_type_modules['Usable_Channels'].iloc[0]
+                    if pd.notna(cap_val):
+                        try:
+                            module_capacity = int(cap_val)
+                        except (ValueError, TypeError):
+                            print(f"[DEBUG] Could not convert Usable_Channels {cap_val}, trying Nominal_Channels")
+                
+                if module_capacity == 16 and 'Nominal_Channels' in df_hardware_filtered.columns:
+                    cap_val = df_type_modules['Nominal_Channels'].iloc[0]
+                    if pd.notna(cap_val):
+                        try:
+                            module_capacity = int(cap_val)
+                        except (ValueError, TypeError):
+                            pass
+                
+                modules_needed = (total_with_spares + module_capacity - 1) // module_capacity  # Ceiling division
+                modules_required[io_type_base] = modules_needed
+                print(f"[DEBUG]   {io_type_base}: {total_with_spares} IOs / {module_capacity} capacity = {modules_needed} modules needed")
+            
+            # Store for later use
+            self.wired_spares_count = wired_spares_count
+            
+            # Prepare assignment dataframe
+            self.df_assigned = self.df_instruments.copy()
+            self.df_assigned['Module_Name'] = ""
+            self.df_assigned['Module_Instance'] = ""
+            self.df_assigned['Channel'] = 0
+            self.df_assigned['Node'] = ""
+            self.df_assigned['Slot'] = 0
+            self.df_assigned['Controller_No'] = ""
+            self.df_assigned['Redundancy_Flag'] = ""
+            
+            # Create mapping from IO_type to Module information using FILTERED hardware
+            module_map = {}
+            
+            unique_modules = df_hardware_filtered.drop_duplicates(subset=['Module', 'IO_Type'])
+            print(f"[DEBUG] Processing {len(unique_modules)} unique modules for assignment (after filtering)")
+            
+            for _, row in unique_modules.iterrows():
+                io_type = str(row.get('IO_Type', '')).upper().strip()
+                module_name = str(row.get('Module', '')).strip()
+                usable_capacity = 16
+                
+                # Try Usable_Channels first, then Nominal_Channels, then default to 16
+                if 'Usable_Channels' in df_hardware_filtered.columns:
+                    cap_val = row.get('Usable_Channels')
+                    if pd.notna(cap_val):
+                        try:
+                            usable_capacity = int(cap_val)
+                        except (ValueError, TypeError):
+                            pass
+                
+                if usable_capacity == 16 and 'Nominal_Channels' in df_hardware_filtered.columns:
+                    cap_val = row.get('Nominal_Channels')
+                    if pd.notna(cap_val):
+                        try:
+                            usable_capacity = int(cap_val)
+                        except (ValueError, TypeError):
+                            pass
+                
+                supports_hart = str(row.get('Supports_HART', '')).strip().lower() == 'yes'
+                
+                if io_type and module_name:
+                    base_type = self._extract_io_type_base(io_type)
+                    base_type_normalized = base_type.split('-')[0]
                     
-                    # Find or create an instance with available capacity
-                    instance_num = 1
-                    while instance_num <= 10:  # Safety limit
-                        if instance_num not in module_info['instances']:
-                            module_info['instances'][instance_num] = {
-                                'IS_count': 0,
-                                'NIS_count': 0,
-                                'channels_per_slot': [0] * 8,  # Track channels used per slot (0-7 for max 8 slots)
-                                'is_type': None  # Track which type (IS/NIS) this instance contains
-                            }
-                        
-                        instance_data = module_info['instances'][instance_num]
-                        
-                        # Check if this instance can accept more signals
-                        # IS and NIS cannot mix
-                        instance_is_type = instance_data['is_type']
-                        if instance_is_type is None:
-                            # First signal in this instance
-                            instance_data['is_type'] = is_type
-                            instance_is_type = is_type
-                        
-                        # Can only add if same IS/NIS type
-                        if instance_is_type != is_type:
-                            instance_num += 1
+                    if base_type_normalized not in module_map:
+                        module_map[base_type_normalized] = []
+                    
+                    module_map[base_type_normalized].append({
+                        'name': module_name,
+                        'capacity': usable_capacity,
+                        'is_hart': supports_hart,
+                        'instances': {}
+                    })
+                    print(f"[DEBUG] Added module: {base_type_normalized} -> {module_name} (usable capacity: {usable_capacity})")
+            
+            print(f"[DEBUG] Created module map with {sum(len(v) for v in module_map.values())} modules across {len(module_map)} IO types")
+            
+            # Assign instruments to modules
+            unassigned_count = 0
+            for idx, row in self.df_assigned.iterrows():
+                io_type_base = row.get('IO_type_base', '')
+                
+                # SKIP SOFT signals
+                if 'SOFT' in str(io_type_base).upper():
+                    print(f"[DEBUG] Skipping SOFT signal: {row.get('PID_TAG', 'UNKNOWN')}")
+                    continue
+                
+                io_type_base_normalized = io_type_base.split('-')[0] if io_type_base else ''
+                
+                is_type = row.get('IS_Non_IS', 'NIS')
+                pid_tag = row.get('PID_TAG', 'UNKNOWN')
+                is_redundant = str(row.get('IO_REDUNDANCY', '')).strip() in ['R', 'r', 'Y', 'y', 'Yes', 'YES', 'yes']
+                signal_type = row.get('signal_origin', '')
+                signal_requires_hart = signal_type in ['HART', 'hart'] or 'HART' in str(row.get('IO_type', ''))
+                
+                if io_type_base_normalized and io_type_base_normalized in module_map:
+                    assigned = False
+                    
+                    for module_info in module_map[io_type_base_normalized]:
+                        if signal_requires_hart and not module_info['is_hart']:
+                            continue
+                        if not signal_requires_hart and module_info['is_hart']:
                             continue
                         
-                        # Try to find an available slot with available channels
-                        assigned_to_slot = False
-                        for slot_idx in range(8):  # Max 8 slots
-                            channels_used = instance_data['channels_per_slot'][slot_idx]
+                        base_module_name = module_info['name']
+                        capacity = module_info['capacity']
+                        
+                        instance_num = 1
+                        while instance_num <= modules_required.get(io_type_base_normalized, 50):
+                            if instance_num not in module_info['instances']:
+                                module_info['instances'][instance_num] = {
+                                    'IS_count': 0,
+                                    'NIS_count': 0,
+                                    'channels_per_slot': [0] * 8,
+                                    'is_type': None
+                                }
                             
-                            if is_redundant:
-                                # For redundant signals: use odd channels only (1, 3, 5, 7, 9, 11, 13, 15)
-                                # Odd channels are at indices 0, 2, 4, 6, 8, 10, 12, 14 if we count 1-based
-                                # So for slot with channels_used on it, figure out next odd channel
-                                odd_channels = [1, 3, 5, 7, 9, 11, 13, 15]
+                            instance_data = module_info['instances'][instance_num]
+                            instance_is_type = instance_data['is_type']
+                            
+                            if instance_is_type is None:
+                                instance_data['is_type'] = is_type
+                                instance_is_type = is_type
+                            
+                            if instance_is_type != is_type:
+                                instance_num += 1
+                                continue
+                            
+                            # Calculate total channels used across all slots
+                            total_channels_used = sum(instance_data['channels_per_slot'])
+                            
+                            # CONSTRAINT 3: Check usable capacity (not exceeding Usable_Channels from module)
+                            if total_channels_used >= capacity:
+                                instance_num += 1
+                                continue
+                            
+                            assigned_to_slot = False
+                            for slot_idx in range(8):
+                                channels_used = instance_data['channels_per_slot'][slot_idx]
                                 
-                                # Count how many odd channels are available in this slot
-                                # If channels_used = 0, next odd channel is 1
-                                # If channels_used = 1, next odd channel is 3 (skip even channel 2)
-                                # If channels_used = 2, next odd channel is 5 (skip even channel 4), etc.
-                                next_odd_idx = channels_used  # This gives us the index of the next odd channel
-                                
-                                if next_odd_idx < len(odd_channels):
-                                    next_channel = odd_channels[next_odd_idx]
-                                    if next_channel <= capacity:
-                                        instance_data['channels_per_slot'][slot_idx] = channels_used + 1
-                                        if is_type == 'IS':
-                                            instance_data['IS_count'] += 1
-                                        else:
-                                            instance_data['NIS_count'] += 1
-                                        
-                                        module_instance = f"{base_module_name}_{instance_num}"
-                                        
-                                        self.df_assigned.at[idx, 'Module_Name'] = base_module_name
-                                        self.df_assigned.at[idx, 'Module_Instance'] = module_instance
-                                        self.df_assigned.at[idx, 'Channel'] = next_channel
-                                        self.df_assigned.at[idx, 'Redundancy_Flag'] = 'Yes'
-                                        
-                                        print(f"[DEBUG] [ASSIGNED] {pid_tag} (redundant, IS/NIS={is_type}) to {module_instance}, Slot {slot_idx + 1}, Channel {next_channel}")
-                                        assigned = True
-                                        assigned_to_slot = True
-                                        break
-                            else:
-                                # Non-redundant: use any available channel sequentially (1, 2, 3, 4, ...)
+                                # Check: can we add to this slot?
                                 if channels_used < capacity:
                                     next_channel = channels_used + 1
+                                    module_instance = f"{base_module_name}_{instance_num}"
+                                    
+                                    already_assigned = self.df_assigned[
+                                        (self.df_assigned['Module_Instance'] == module_instance) &
+                                        (self.df_assigned['Channel'] == next_channel)
+                                    ]
+                                    if not already_assigned.empty:
+                                        continue
+                                    
                                     instance_data['channels_per_slot'][slot_idx] = channels_used + 1
                                     if is_type == 'IS':
                                         instance_data['IS_count'] += 1
                                     else:
                                         instance_data['NIS_count'] += 1
                                     
-                                    module_instance = f"{base_module_name}_{instance_num}"
-                                    
                                     self.df_assigned.at[idx, 'Module_Name'] = base_module_name
                                     self.df_assigned.at[idx, 'Module_Instance'] = module_instance
                                     self.df_assigned.at[idx, 'Channel'] = next_channel
-                                    self.df_assigned.at[idx, 'Redundancy_Flag'] = 'No'
+                                    self.df_assigned.at[idx, 'Redundancy_Flag'] = 'Yes' if is_redundant else 'No'
                                     
-                                    print(f"[DEBUG] [ASSIGNED] {pid_tag} (non-redundant, IS/NIS={is_type}) to {module_instance}, Slot {slot_idx + 1}, Channel {next_channel}")
+                                    print(f"[DEBUG] [ASSIGNED] {pid_tag} to {module_instance} CH{next_channel}")
                                     assigned = True
                                     assigned_to_slot = True
                                     break
+                            
+                            if assigned_to_slot:
+                                break
+                            else:
+                                instance_num += 1
                         
-                        if assigned_to_slot:
+                        if assigned:
                             break
-                        else:
-                            instance_num += 1
                     
-                    if assigned:
-                        break
-                
-                if not assigned:
-                    print(f"[WARNING] [UNASSIGNED] {pid_tag} ({is_type}) - couldn't find compatible module")
+                    if not assigned:
+                        print(f"[WARNING] [UNASSIGNED] {pid_tag}")
+                        unassigned_count += 1
+                else:
+                    print(f"[WARNING] [UNASSIGNED] {pid_tag} - IO_type not available")
                     unassigned_count += 1
-            else:
-                print(f"[WARNING] [UNASSIGNED] {pid_tag} - IO_type {io_type_base} not available")
-                unassigned_count += 1
-        
-        assigned_count = len(self.df_assigned[self.df_assigned['Module_Name'] != ""])
-        print(f"[DEBUG] Module assignment complete: {assigned_count} assigned, {unassigned_count} unassigned")
-        return True
+            
+            assigned_count = len(self.df_assigned[self.df_assigned['Module_Name'] != ""])
+            print(f"[DEBUG] Module assignment complete: {assigned_count} assigned, {unassigned_count} unassigned")
+            return True
+            
+        except Exception as e:
+            print(f"[ERROR] Exception during module assignment: {e}")
+            import traceback
+            traceback.print_exc()
+            return False
     
     def _get_usable_channels_factor(self):
         """
@@ -693,6 +857,70 @@ class DesignInputReview:
         error_msg = "; ".join(errors) if errors else ""
         
         return is_valid, error_msg
+    
+    def assign_modules_intelligent(self):
+        """
+        NEW INTELLIGENT ASSIGNMENT METHOD using ChannelAssignmentManager.
+        
+        Process flow:
+        1. Analyze signals and calculate module requirements
+        2. Plan module allocation (which signals go to which modules)
+        3. Distribute wired spares evenly across all modules
+        4. Ensure each module has at least 1 empty channel (or equal distribution)
+        
+        Returns:
+            bool: True if successful, False otherwise
+        """
+        print("[DEBUG] [NEW METHOD] Assigning instruments using intelligent ChannelAssignmentManager...")
+        
+        if self.df_instruments is None or self.df_hardware is None:
+            print("[ERROR] Required data not loaded")
+            return False
+        
+        try:
+            # Create and initialize the assignment manager
+            manager = ChannelAssignmentManager(self.df_instruments, self.df_hardware)
+            
+            # Step 1: Analyze and plan the assignment
+            analysis = manager.analyze_and_plan()
+            
+            if not analysis.get('success', False):
+                print(f"[ERROR] Failed to analyze and plan assignments: {analysis.get('error', 'Unknown error')}")
+                return False
+            
+            print(f"\n[DEBUG] Analysis Results:")
+            print(f"  - Total signals: {analysis['total_signals']}")
+            print(f"  - Total wired spares: {analysis['total_wired_spares']}")
+            print(f"  - Modules needed: {analysis['total_modules']}")
+            print(f"  - Channels per module: {analysis['channels_per_module']}")
+            print(f"  - Wired spares per module: {analysis['wired_spares_per_module']:.2f}")
+            print(f"  - Signal groups: {analysis['signal_groups']}")
+            
+            # Step 2: Assign channels based on the plan
+            self.df_assigned = manager.assign_channels(node_start=1, slot_start=1)
+            
+            if self.df_assigned.empty:
+                print("[ERROR] Failed to assign channels")
+                return False
+            
+            # Count assignments
+            assigned_count = len(self.df_assigned[self.df_assigned['Channel'] > 0])
+            unassigned_count = len(self.df_assigned[self.df_assigned['Channel'] == 0])
+            
+            print(f"\n[DEBUG] Assignment Results:")
+            print(f"  - Successfully assigned: {assigned_count}")
+            print(f"  - Unassigned: {unassigned_count}")
+            
+            # Print summary report
+            print(manager.get_summary_report())
+            
+            return True
+            
+        except Exception as e:
+            print(f"[ERROR] Exception in assign_modules_intelligent: {e}")
+            import traceback
+            traceback.print_exc()
+            return False
     
     def assign_nodes_and_controllers(self):
         """
@@ -1001,169 +1229,106 @@ class DesignInputReview:
     
     def generate_wired_spares(self):
         """
-        Generate wired spare channels based on user percentage input.
-        Spares are distributed evenly across all instances of each module type.
-        Creates NEW module instances for spares that don't fit in existing ones.
-        Creates spare channel tags like SCS0101_N1S1CH1
-        Only generates spares if user explicitly provided wired_spares_percentage > 0
-        Validates that total channels (assigned + spares) do not exceed hardware capacity.
+        Generate wired spare channels based on pre-calculated counts per signal type.
+        Distributes spares evenly across all module instances of each signal type.
+        Uses node/slot/channel info from assigned data.
         """
         print(f"[DEBUG] Generating wired spare channels... wired_spares_percentage={self.wired_spares_percentage}")
         
-        # Only generate spares if user explicitly provided a value
         if self.wired_spares_percentage is None or self.wired_spares_percentage == 0:
-            print(f"[DEBUG] No wired spares percentage provided (value={self.wired_spares_percentage}), returning empty dataframe")
+            print(f"[DEBUG] No wired spares percentage provided")
             return pd.DataFrame()
         
         if self.df_assigned is None:
-            print("[ERROR] No assigned data for spare calculation")
+            print("[ERROR] No assigned data")
             return pd.DataFrame()
         
-        # Get assigned instruments (exclude unassigned)
-        assigned_df = self.df_assigned[self.df_assigned['Module_Instance'] != ""].copy()
-        
-        if assigned_df.empty:
-            print(f"[ERROR] No assigned instruments for spare calculation (wired_spares_percentage={self.wired_spares_percentage})")
+        if not hasattr(self, 'wired_spares_count') or not self.wired_spares_count:
+            print("[DEBUG] No wired spares to generate")
             return pd.DataFrame()
-        
-        # Build hardware capacity map: {module_name: capacity}
-        hardware_capacity = {}
-        if self.df_hardware is not None:
-            for _, row in self.df_hardware.iterrows():
-                module_name = str(row.get('Module Name', '')).strip()
-                capacity = int(row.get('Nos of Channel', 16)) if pd.notna(row.get('Nos of Channel')) else 16
-                if module_name:
-                    hardware_capacity[module_name] = capacity
         
         spares_data = []
-        module_instance_counters = {}  # Track max instance number per module type
         
-        # Group by Module_Name to calculate total spares per module type
-        for module_name in sorted(assigned_df['Module_Name'].unique()):
-            module_df = assigned_df[assigned_df['Module_Name'] == module_name]
+        # For each signal type that needs wired spares
+        for io_type_base, spare_count in self.wired_spares_count.items():
+            if spare_count <= 0:
+                continue
             
-            # Get hardware capacity for this module
-            max_capacity = hardware_capacity.get(module_name, 16)
+            print(f"[DEBUG] Generating {spare_count} wired spares for {io_type_base}")
             
-            # Calculate total number of spares for this module type
-            total_channels = len(module_df)
-            total_spare_count = int(total_channels * (self.wired_spares_percentage / 100))
+            # Get all assigned instances of this signal type
+            assigned_of_type = self.df_assigned[
+                (self.df_assigned['IO_type_base'] == io_type_base) &
+                (self.df_assigned['Module_Instance'] != "")
+            ].copy()
             
-            if total_spare_count > 0:
-                # Get all unique module instances for this module type
-                module_instances = sorted(module_df['Module_Instance'].unique())
-                num_instances = len(module_instances)
+            if assigned_of_type.empty:
+                print(f"[DEBUG]   No assigned instances found for {io_type_base}")
+                continue
+            
+            # Get unique module instances
+            module_instances = sorted(assigned_of_type['Module_Instance'].unique())
+            num_instances = len(module_instances)
+            
+            # Distribute spares evenly across instances
+            spares_per_instance_base = spare_count // num_instances
+            spares_remainder = spare_count % num_instances
+            
+            print(f"[DEBUG]   Found {num_instances} instances, distributing {spares_per_instance_base} base + {spares_remainder} remainder")
+            
+            spares_assigned = 0
+            
+            # Add spares to each instance
+            for idx, module_instance in enumerate(module_instances):
+                instance_signals = assigned_of_type[assigned_of_type['Module_Instance'] == module_instance]
                 
-                # Track the highest instance number for this module type to create new ones later
-                max_instance_num = max([int(inst.split('_')[1]) for inst in module_instances])
-                module_instance_counters[module_name] = max_instance_num
+                # How many spares for this instance
+                spares_for_this = spares_per_instance_base
+                if idx < spares_remainder:
+                    spares_for_this += 1
                 
-                print(f"[DEBUG] Module {module_name}: {total_channels} actual channels -> {total_spare_count} wired spare channels ({self.wired_spares_percentage}% of {total_channels})")
-                print(f"[DEBUG]   Module capacity: {max_capacity} channels per instance")
-                print(f"[DEBUG]   Current instances: {num_instances} ({module_instances})")
+                if spares_for_this <= 0:
+                    continue
                 
-                # Calculate spares for existing instances (fill them up to 16 first)
-                spares_placed = 0
-                existing_instances_with_spares = []
+                # Get instance info from one of the signals
+                sample_row = instance_signals.iloc[0]
+                controller_no = str(sample_row.get('Controller_No', 'SCS0101'))
+                node_num = int(sample_row.get('Node', 1)) if pd.notna(sample_row.get('Node')) else 1
+                slot_num = int(sample_row.get('Slot', 1)) if pd.notna(sample_row.get('Slot')) else 1
                 
-                for module_instance in module_instances:
-                    instance_df = module_df[module_df['Module_Instance'] == module_instance]
-                    max_channel = int(instance_df['Channel'].max())
-                    available_slots = max_capacity - max_channel
+                # Get the highest channel number used in this instance
+                max_channel = int(instance_signals['Channel'].max()) if len(instance_signals) > 0 else 0
+                
+                print(f"[DEBUG]     {module_instance}: {spares_for_this} spares, next channels start at {max_channel + 1}")
+                
+                # Add spares starting from next available channel
+                for spare_idx in range(1, spares_for_this + 1):
+                    spare_channel = max_channel + spare_idx
+                    spare_tag = f"{controller_no}_N{node_num}S{slot_num}CH{spare_channel}"
                     
-                    if available_slots > 0 and spares_placed < total_spare_count:
-                        # Add spares to this instance up to capacity
-                        spares_for_this_instance = min(available_slots, total_spare_count - spares_placed)
-                        
-                        # Get node/slot info
-                        sample_row = instance_df.iloc[0]
-                        controller_no = str(sample_row.get('Controller_No', 'SCS0101'))
-                        node_num = int(sample_row.get('Node', 1))
-                        slot_num = int(sample_row.get('Slot', 1))
-                        
-                        # Add spares to this instance
-                        for spare_idx in range(1, spares_for_this_instance + 1):
-                            spare_channel = max_channel + spare_idx
-                            spare_tag = f"{controller_no}_N{node_num}S{slot_num}CH{spare_channel}"
-                            
-                            spares_data.append({
-                                'PID_TAG': spare_tag,
-                                'signal_origin': sample_row.get('signal_origin', ''),
-                                'IO_type': f"{instance_df['IO_type'].iloc[0]}_Spare",
-                                'IO_REDUNDANCY': '',
-                                'IS_Non_IS': sample_row.get('IS_Non_IS', 'NIS'),
-                                'IO_type_base': instance_df['IO_type_base'].iloc[0],
-                                'Module_Name': module_name,
-                                'Module_Instance': module_instance,
-                                'Channel': spare_channel,
-                                'Node': node_num,
-                                'Slot': slot_num,
-                                'Controller_No': controller_no,
-                                'sort_prefix': sample_row.get('sort_prefix', ''),
-                                'sort_type': sample_row.get('sort_type', ''),
-                                'sort_base_num': sample_row.get('sort_base_num', 0),
-                                'sort_suffix': sample_row.get('sort_suffix', ''),
-                                'sort_redundancy': sample_row.get('sort_redundancy', '')
-                            })
-                            spares_placed += 1
-                        
-                        existing_instances_with_spares.append((module_instance, spares_for_this_instance))
-                
-                print(f"[DEBUG]   Added {spares_placed} spares to existing instances: {existing_instances_with_spares}")
-                
-                # If we haven't placed all spares yet, CREATE NEW MODULE INSTANCES
-                if spares_placed < total_spare_count:
-                    remaining_spares = total_spare_count - spares_placed
-                    
-                    # Calculate how many new instances we need
-                    spares_per_new_instance = max_capacity
-                    new_instances_needed = (remaining_spares + spares_per_new_instance - 1) // spares_per_new_instance
-                    
-                    print(f"[DEBUG]   Need {new_instances_needed} NEW module instances for remaining {remaining_spares} spares")
-                    
-                    # Get sample row for controller info
-                    sample_row = module_df.iloc[0]
-                    controller_no = str(sample_row.get('Controller_No', 'SCS0101'))
-                    
-                    # Create new module instances with spares, will assign Node/Slot later
-                    for new_inst_idx in range(new_instances_needed):
-                        new_instance_num = max_instance_num + 1 + new_inst_idx
-                        new_module_instance = f"{module_name}_{new_instance_num}"
-                        
-                        # How many spares for this new instance
-                        spares_for_new_instance = min(spares_per_new_instance, remaining_spares - (new_inst_idx * spares_per_new_instance))
-                        
-                        print(f"[DEBUG]     Creating {new_module_instance} with {spares_for_new_instance} spares")
-                        
-                        # Create spares for this new instance (channels 1 to spares_for_new_instance)
-                        for spare_channel in range(1, spares_for_new_instance + 1):
-                            # Node/Slot will be assigned later via assign_nodes_and_controllers
-                            spare_tag = f"{controller_no}_N0S0CH{spare_channel}"  # Placeholder, will be updated
-                            
-                            spares_data.append({
-                                'PID_TAG': spare_tag,
-                                'signal_origin': sample_row.get('signal_origin', ''),
-                                'IO_type': f"{module_name.split('_')[0]}_Spare",
-                                'IO_REDUNDANCY': '',
-                                'IS_Non_IS': sample_row.get('IS_Non_IS', 'NIS'),
-                                'IO_type_base': sample_row.get('IO_type_base', module_name),
-                                'Module_Name': module_name,
-                                'Module_Instance': new_module_instance,
-                                'Channel': spare_channel,
-                                'Node': 0,  # Will be assigned later
-                                'Slot': 0,  # Will be assigned later
-                                'Controller_No': controller_no,
-                                'sort_prefix': sample_row.get('sort_prefix', ''),
-                                'sort_type': sample_row.get('sort_type', ''),
-                                'sort_base_num': sample_row.get('sort_base_num', 0),
-                                'sort_suffix': sample_row.get('sort_suffix', ''),
-                                'sort_redundancy': sample_row.get('sort_redundancy', '')
-                            })
-                            spares_placed += 1
+                    spares_data.append({
+                        'PID_TAG': spare_tag,
+                        'signal_origin': sample_row.get('signal_origin', ''),
+                        'IO_type': f"{sample_row.get('IO_type', '')}_Spare",
+                        'IO_REDUNDANCY': '',
+                        'IS_Non_IS': sample_row.get('IS_Non_IS', 'NIS'),
+                        'IO_type_base': io_type_base,
+                        'Module_Name': sample_row.get('Module_Name', ''),
+                        'Module_Instance': module_instance,
+                        'Channel': spare_channel,
+                        'Node': node_num,
+                        'Slot': slot_num,
+                        'Controller_No': controller_no,
+                        'sort_prefix': sample_row.get('sort_prefix', ''),
+                        'sort_type': sample_row.get('sort_type', ''),
+                        'sort_base_num': sample_row.get('sort_base_num', 0),
+                        'sort_suffix': sample_row.get('sort_suffix', ''),
+                        'sort_redundancy': sample_row.get('sort_redundancy', '')
+                    })
+                    spares_assigned += 1
         
         spares_df = pd.DataFrame(spares_data)
-        print(f"[DEBUG] Generated {len(spares_df)} wired spare channels (wired_spares_percentage={self.wired_spares_percentage})")
-        print(f"[DEBUG]   Breakdown: {spares_df.groupby('Module_Name').size().to_dict()}")
+        print(f"[DEBUG] Generated {len(spares_df)} total wired spare channels")
         return spares_df
     
     def generate_output_file(self):
@@ -1257,13 +1422,12 @@ class DesignInputReview:
             if filtered_out > 0:
                 print(f"[DEBUG] Filtered out {filtered_out} pre-existing placeholder spares")
             
-            # Reorder columns: Controller_No, Node, Slot, Channel, and rest
+            # Reorder columns: Keep ONLY the required columns in specified order
             col_order = ['PID_TAG', 'signal_origin', 'IO_type', 'IO_REDUNDANCY', 'IS_Non_IS', 
                          'Module_Name', 'Controller_No', 'Node', 'Slot', 'Channel']
             available_cols = [col for col in col_order if col in assigned_df.columns]
-            remaining_cols = [col for col in assigned_df.columns if col not in col_order]
-            final_cols = available_cols + remaining_cols
-            assigned_df = assigned_df[final_cols]
+            assigned_df = assigned_df[available_cols]  # Keep ONLY these columns, drop the rest
+            print(f"[DEBUG] Final assigned columns: {list(assigned_df.columns)}")
             
             # Count wired spares before writing
             wired_spares_count = len(assigned_df[assigned_df['PID_TAG'].str.contains('SCS0101_N', na=False)])
@@ -1295,6 +1459,12 @@ class DesignInputReview:
                 # Write Unassigned sheet
                 if self.df_unassigned is not None and not self.df_unassigned.empty:
                     unassigned_df = self.df_unassigned.drop(columns=['IO_type_base', 'Module_Instance'], errors='ignore')
+                    # Keep ONLY the required columns in specified order
+                    col_order = ['PID_TAG', 'signal_origin', 'IO_type', 'IO_REDUNDANCY', 'IS_Non_IS', 
+                                 'Module_Name', 'Controller_No', 'Node', 'Slot', 'Channel']
+                    unassigned_cols = [col for col in col_order if col in unassigned_df.columns]
+                    unassigned_df = unassigned_df[unassigned_cols]  # Keep ONLY these columns, drop the rest
+                    print(f"[DEBUG] Final unassigned columns: {list(unassigned_df.columns)}")
                     print(f"[DEBUG] Writing {len(unassigned_df)} rows to 'Unassigned' sheet...")
                     unassigned_df.to_excel(writer, sheet_name='Unassigned', index=False)
                     print(f"[DEBUG] Unassigned sheet written successfully")
@@ -1478,7 +1648,7 @@ class DesignInputReview:
             ("Applying user inputs for missing columns", self.apply_user_inputs),
             ("Sorting by PID_TAG", self.sort_by_pid_tag),
             ("Reading hardware configuration", self.read_hardware_config),
-            ("Assigning modules", self.assign_modules),
+            ("Assigning modules intelligently", self.assign_modules_intelligent),
             ("Reading FIO configuration", self.read_fio_config),
             ("Assigning nodes and controllers", self.assign_nodes_and_controllers),
             ("Identifying unassigned instruments", self.identify_unassigned),

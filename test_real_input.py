@@ -39,8 +39,8 @@ if not review.read_fio_config():
     print("Failed to read FIO")
     sys.exit(1)
 
-if not review.assign_modules():
-    print("Failed to assign modules")
+if not review.assign_modules_intelligent():
+    print("Failed to assign modules intelligently")
     sys.exit(1)
 
 if not review.assign_nodes_and_controllers():
