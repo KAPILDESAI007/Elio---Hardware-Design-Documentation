@@ -453,3 +453,419 @@ class ChannelAssignmentManager:
         
         report.append("\n" + "=" * 100)
         return "\n".join(report)
+
+
+class ChannelDistributionManager:
+    """
+    New channel assignment manager using system constraints approach.
+    
+    Distributes signals, wired spares, and blank channels equally across modules
+    for each IO type based on module capacity and requirements from SystemConstraints.
+    
+    Flow:
+    1. Calculate total available channels (modules_required × channels_per_module)
+    2. Distribute signals + wired spares + blank channels equally per module
+    3. Create channel assignment plan showing:
+       - Module instance
+       - Channels allocated per type (signal, spare, blank)
+       - Channel ranges
+    """
+    
+    def __init__(self, logger=None):
+        """
+        Initialize the channel distribution manager.
+        
+        Args:
+            logger: Optional logger instance
+        """
+        self.logger = logger or logging.getLogger(__name__)
+        self.distribution_plan = {}  # Dict[io_type, distribution details]
+        self.module_channel_map = {}  # Dict[(io_type, module_idx), channel assignments]
+    
+    
+    def calculate_total_available_channels(self, module_requirements: Dict[str, dict]) -> Dict[str, dict]:
+        """
+        Calculate total available channels for each IO type.
+        
+        Total available = modules_required × usable_channels_per_module
+        
+        Args:
+            module_requirements (Dict[str, dict]): Output from calculate_modules_required()
+                Expected keys per IO_type: module_name, usable_channels_per_module, modules_required
+        
+        Returns:
+            Dict[str, dict]: For each IO_type contains:
+            {
+                'modules_required': int,
+                'usable_channels_per_module': int,
+                'total_available_channels': int,
+                'module_name': str
+            }
+        """
+        try:
+            available_channels = {}
+            
+            for io_type, req in module_requirements.items():
+                total_channels = req['modules_required'] * req['usable_channels_per_module']
+                
+                available_channels[io_type] = {
+                    'modules_required': req['modules_required'],
+                    'usable_channels_per_module': req['usable_channels_per_module'],
+                    'total_available_channels': total_channels,
+                    'module_name': req['module_name']
+                }
+                
+                self.logger.info(
+                    f"Available channels for {io_type}: {req['modules_required']} modules × "
+                    f"{req['usable_channels_per_module']} ch/module = {total_channels} channels"
+                )
+            
+            return available_channels
+        except Exception as e:
+            self.logger.error(f"Error calculating available channels: {e}")
+            raise
+    
+    
+    def distribute_channels_equally(self, 
+                                   signal_counts: Dict[str, int],
+                                   wired_spares: Dict[str, int],
+                                   module_requirements: Dict[str, dict]) -> Dict[str, dict]:
+        """
+        Distribute signals, wired spares, and blank channels equally across modules per IO type.
+        
+        For each IO type:
+        1. Calculate total items = signals + wired spares
+        2. Distribute across modules: each module gets equal share (with remainder handling)
+        3. Calculate blank channels = total_available - (signals + spares)
+        4. Return distribution details per module
+        
+        CRITICAL: Ensure total_assigned never exceeds module_capacity
+        
+        Args:
+            signal_counts (Dict[str, int]): Signals per IO type (from InputDataAnalyzer)
+            wired_spares (Dict[str, int]): Wired spares per IO type (from InputDataAnalyzer)
+            module_requirements (Dict[str, dict]): Module capacity info (from SystemConstraints)
+        
+        Returns:
+            Dict[str, dict]: Distribution plan per IO_type
+            {
+                'io_type': {
+                    'signals': int,
+                    'wired_spares': int,
+                    'total_items': int,
+                    'modules_required': int,
+                    'channels_per_module': int,
+                    'total_available_channels': int,
+                    'blank_channels': int,
+                    'per_module_distribution': {...},
+                    'module_specs': [...]  # List of per-module assignments
+                }
+            }
+        """
+        try:
+            distribution_plan = {}
+            
+            for io_type in module_requirements.keys():
+                signals = signal_counts.get(io_type, 0)
+                spares = wired_spares.get(io_type, 0)
+                req = module_requirements[io_type]
+                
+                modules_required = req['modules_required']
+                channels_per_module = req['usable_channels_per_module']
+                total_available = modules_required * channels_per_module
+                
+                total_items = signals + spares
+                blank_channels = max(0, total_available - total_items)
+                
+                # Calculate equal distribution of TOTAL items (not separate for signals/spares)
+                base_items_per_module = total_items // modules_required if modules_required > 0 else 0
+                remainder_items = total_items % modules_required if modules_required > 0 else 0
+                
+                # CRITICAL FIX: Ensure module capacity is never exceeded
+                # Cap base_items to module capacity
+                base_items_per_module = min(base_items_per_module, channels_per_module)
+                
+                # Distribute signals and spares proportionally within each module's allocation
+                module_specs = []
+                signal_idx = 0
+                spare_idx = 0
+                
+                for mod_idx in range(modules_required):
+                    # Determine total allocation for this module
+                    module_total = base_items_per_module
+                    if mod_idx < remainder_items:
+                        module_total += 1
+                    
+                    # Ensure never exceeds capacity
+                    module_total = min(module_total, channels_per_module)
+                    
+                    # Now distribute signals and spares within this total
+                    # Distribute remaining signals first, then spares
+                    remaining_signals = signals - signal_idx
+                    remaining_spares = spares - spare_idx
+                    
+                    # Allocate available slots to signals (priority)
+                    module_signals = min(remaining_signals, module_total)
+                    module_spares = min(remaining_spares, module_total - module_signals)
+                    module_items = module_signals + module_spares
+                    module_blanks = max(0, channels_per_module - module_items)
+                    
+                    signal_idx += module_signals
+                    spare_idx += module_spares
+                    
+                    module_specs.append({
+                        'module_instance': f"{req['module_name']}_{mod_idx + 1}",
+                        'module_index': mod_idx,
+                        'signals': module_signals,
+                        'wired_spares': module_spares,
+                        'blank_channels': module_blanks,
+                        'total_items': module_items,
+                        'channel_range': f"1-{channels_per_module}",
+                        'capacity': channels_per_module
+                    })
+                
+                distribution_plan[io_type] = {
+                    'signals': signals,
+                    'wired_spares': spares,
+                    'total_items': total_items,
+                    'modules_required': modules_required,
+                    'channels_per_module': channels_per_module,
+                    'total_available_channels': total_available,
+                    'blank_channels': blank_channels,
+                    'module_name': req['module_name'],
+                    'per_module_distribution': {
+                        'base_items_per_module': base_items_per_module,
+                        'remainder_items': remainder_items,
+                        'first_n_modules_get_extra': remainder_items,
+                        'signals_per_module': f"~{signals // modules_required if modules_required > 0 else 0}",
+                        'spares_per_module': f"~{spares // modules_required if modules_required > 0 else 0}",
+                        'blank_per_module': f"~{channels_per_module - base_items_per_module}"
+                    },
+                    'module_specs': module_specs
+                }
+                
+                self.logger.info(
+                    f"Distribution for {io_type}: {signals} signals + {spares} spares = {total_items} items → "
+                    f"{modules_required} modules × {channels_per_module} ch = {total_available} available, "
+                    f"{blank_channels} blank channels"
+                )
+                
+            self.distribution_plan = distribution_plan
+            return distribution_plan
+            
+        except Exception as e:
+            self.logger.error(f"Error distributing channels: {e}")
+            raise
+    
+    
+    def create_channel_assignment_table(self, distribution_plan: Dict[str, dict], 
+                                       mounting_table: pd.DataFrame = None) -> pd.DataFrame:
+        """
+        Create a detailed channel assignment table showing channel allocation per module.
+        
+        Table structure:
+        - Rows: One row per module instance per IO type
+        - Columns: Module name, Module Index, Signals, Wired_Spares, Blank_Channels, Total, 
+                   Capacity, Utilization %, Channel_Range, Node, Slot (if mounting_table provided)
+        
+        Args:
+            distribution_plan (Dict[str, dict]): Output from distribute_channels_equally()
+            mounting_table (pd.DataFrame, optional): From build_mounting_table() to add Node/Slot info
+        
+        Returns:
+            pd.DataFrame: Channel assignment table
+        """
+        try:
+            table_rows = []
+            
+            for io_type in sorted(distribution_plan.keys()):
+                plan = distribution_plan[io_type]
+                modules = plan['module_specs']
+                
+                for module_spec in modules:
+                    row = {
+                        'IO_Type': io_type,
+                        'Module_Name': module_spec['module_instance'],
+                        'Module_Index': module_spec['module_index'],
+                        'Signals': module_spec['signals'],
+                        'Wired_Spares': module_spec['wired_spares'],
+                        'Blank_Channels': module_spec['blank_channels'],
+                        'Total_Assigned': module_spec['total_items'],
+                        'Module_Capacity': module_spec['capacity'],
+                        'Utilization_%': round(
+                            (module_spec['total_items'] / module_spec['capacity'] * 100) 
+                            if module_spec['capacity'] > 0 else 0, 
+                            1
+                        ),
+                        'Channel_Range': f"1-{module_spec['capacity']}",
+                        'Status': 'Full' if module_spec['blank_channels'] == 0 else f"{module_spec['blank_channels']} spare"
+                    }
+                    
+                    # Add Node/Slot if mounting table provided
+                    if mounting_table is not None:
+                        # Try to find module location in mounting table
+                        module_name = module_spec['module_instance']
+                        found_location = None
+                        
+                        for node_idx, node_name in enumerate(mounting_table.index):
+                            for slot_idx, slot_name in enumerate(mounting_table.columns):
+                                cell_value = mounting_table.loc[node_name, slot_name]
+                                if cell_value == module_name:
+                                    # Extract node and slot numbers
+                                    node_num = int(node_name.split('_')[1])
+                                    slot_num = int(slot_name.split('_')[1])
+                                    found_location = (node_num, slot_num)
+                                    break
+                            if found_location:
+                                break
+                        
+                        if found_location:
+                            row['Node'] = found_location[0]
+                            row['Slot'] = found_location[1]
+                        else:
+                            row['Node'] = 'N/A'
+                            row['Slot'] = 'N/A'
+                    
+                    table_rows.append(row)
+            
+            df_assignment = pd.DataFrame(table_rows)
+            
+            self.logger.info(f"Created channel assignment table with {len(df_assignment)} module entries")
+            return df_assignment
+            
+        except Exception as e:
+            self.logger.error(f"Error creating channel assignment table: {e}")
+            raise
+    
+    
+    def get_distribution_summary(self, distribution_plan: Dict[str, dict]) -> str:
+        """
+        Generate a formatted summary of the channel distribution plan.
+        
+        Args:
+            distribution_plan (Dict[str, dict]): Output from distribute_channels_equally()
+        
+        Returns:
+            str: Formatted summary report
+        """
+        report = []
+        report.append("\n" + "=" * 100)
+        report.append("CHANNEL DISTRIBUTION SUMMARY")
+        report.append("=" * 100)
+        
+        for io_type in sorted(distribution_plan.keys()):
+            plan = distribution_plan[io_type]
+            
+            report.append(f"\n{io_type} ({plan['module_name']}):")
+            report.append("-" * 100)
+            report.append(f"  Total Signals: {plan['signals']}")
+            report.append(f"  Total Wired Spares: {plan['wired_spares']}")
+            report.append(f"  Total Items: {plan['total_items']}")
+            report.append(f"  Modules Required: {plan['modules_required']}")
+            report.append(f"  Channels per Module: {plan['channels_per_module']}")
+            report.append(f"  Total Available Channels: {plan['total_available_channels']}")
+            report.append(f"  Blank Channels: {plan['blank_channels']}")
+            
+            dist = plan['per_module_distribution']
+            report.append(f"\n  Per Module Distribution:")
+            report.append(f"    - Base items per module: {dist['base_items_per_module']}")
+            report.append(f"    - Remainder items: {dist['remainder_items']}")
+            report.append(f"    - First {dist['first_n_modules_get_extra']} modules get +1 item")
+            report.append(f"    - Signals per module (avg): {dist['signals_per_module']}")
+            report.append(f"    - Spares per module (avg): {dist['spares_per_module']}")
+            report.append(f"    - Blank per module (avg): {dist['blank_per_module']}")
+            
+            report.append(f"\n  Module Details (first 5 shown):")
+            for i, spec in enumerate(plan['module_specs'][:5]):
+                report.append(
+                    f"    {spec['module_instance']}: "
+                    f"{spec['signals']} signals + {spec['wired_spares']} spares + {spec['blank_channels']} blank = "
+                    f"{spec['total_items']}/{spec['capacity']}"
+                )
+            if len(plan['module_specs']) > 5:
+                report.append(f"    ... and {len(plan['module_specs']) - 5} more modules")
+        
+        report.append("\n" + "=" * 100)
+        return "\n".join(report)
+    
+    
+    def assign_signals_to_channels(self, 
+                                   df_instruments: pd.DataFrame,
+                                   signal_counts: Dict[str, int],
+                                   distribution_plan: Dict[str, dict],
+                                   mounting_table: pd.DataFrame = None) -> pd.DataFrame:
+        """
+        Assign individual signals to specific channels in modules.
+        
+        Args:
+            df_instruments: DataFrame with signal/instrument data
+            signal_counts: Signal counts per IO type
+            distribution_plan: Output from distribute_channels_equally()
+            mounting_table: Optional mounting table from SystemConstraints
+        
+        Returns:
+            DataFrame with signal-to-channel assignments
+        """
+        try:
+            assignment_rows = []
+            signal_indices = {io_type: 0 for io_type in signal_counts.keys()}
+            
+            # Separate signals by IO type
+            for io_type in sorted(signal_counts.keys()):
+                if signal_counts.get(io_type, 0) == 0:
+                    continue
+                
+                # Filter signals for this IO type
+                type_mask = df_instruments['IO_type_base'].astype(str).str.upper() == io_type
+                type_signals = df_instruments[type_mask].copy().reset_index(drop=True)
+                
+                if len(type_signals) == 0:
+                    continue
+                
+                plan = distribution_plan[io_type]
+                modules = plan['module_specs']
+                
+                signal_idx = 0
+                for module_spec in modules:
+                    module_name = module_spec['module_instance']
+                    module_signals = module_spec['signals']
+                    
+                    # Get Node and Slot from mounting table if available
+                    node = 'N/A'
+                    slot = 'N/A'
+                    if mounting_table is not None:
+                        for node_name in mounting_table.index:
+                            for slot_name in mounting_table.columns:
+                                cell = mounting_table.loc[node_name, slot_name]
+                                if cell == module_name:
+                                    node = int(node_name.split('_')[1])
+                                    slot = int(slot_name.split('_')[1])
+                                    break
+                    
+                    # Assign signals to channels for this module
+                    for ch in range(1, module_signals + 1):
+                        if signal_idx >= len(type_signals):
+                            break
+                        
+                        signal_row = type_signals.iloc[signal_idx]
+                        assignment_rows.append({
+                            'PID_TAG': signal_row.get('PID_TAG', ''),
+                            'Description': signal_row.get('Description', ''),
+                            'IO_Type': io_type,
+                            'Module_Name': module_name,
+                            'Module_Index': module_spec['module_index'],
+                            'Channel': ch,
+                            'Node': node,
+                            'Slot': slot,
+                            'Signal_Type': 'Signal',
+                            'Utilization': 'Active'
+                        })
+                        signal_idx += 1
+            
+            df_assignment = pd.DataFrame(assignment_rows)
+            self.logger.info(f"Assigned {len(df_assignment)} signals to channels")
+            return df_assignment
+            
+        except Exception as e:
+            self.logger.error(f"Error assigning signals to channels: {e}")
+            raise

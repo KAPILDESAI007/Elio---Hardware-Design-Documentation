@@ -13,7 +13,6 @@ from excel.excel_manager import ExcelManager
 
 PROJECT_DIR = Path(r"C:\Working\Others\Python\Cloud App Projects")
 
-
 class AssignmentBuilder:
     @staticmethod
     def build_assignment_sheet(df_points: pd.DataFrame, system_cabinet_filter: str):

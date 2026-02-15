@@ -31,13 +31,18 @@ try:
     AssignmentBuilder = processors_module.AssignmentBuilder
     ModuleMapper = processors_module.ModuleMapper
     
-    __all__ = [
-        'PIDTagFiller',
-        'ModuleNameAdder',
-        'StationWriter',
-        'ModuleDetailsFiller',
-        'AssignmentBuilder',
-        'ModuleMapper'
-    ]
 except Exception as e:
     raise ImportError(f"Failed to import processors module: {e}")
+
+# Import ExcelOutputGenerator from excel_output module
+from .excel_output import ExcelOutputGenerator
+
+__all__ = [
+    'PIDTagFiller',
+    'ModuleNameAdder',
+    'StationWriter',
+    'ModuleDetailsFiller',
+    'AssignmentBuilder',
+    'ModuleMapper',
+    'ExcelOutputGenerator'
+]
