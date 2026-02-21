@@ -217,12 +217,63 @@
                     </section>
 
                     <section class="results-section" id="designResultsSection" style="display: none;">
-                        <h3>Results</h3>
+                        <h3>📋 Signals Review</h3>
+                        
+                        <!-- Column Detection Results -->
+                        <div class="info-box">
+                            <h4>📍 Column Detection Results</h4>
+                            <div id="columnDetectionResults">
+                                <p>Column detection will appear here...</p>
+                            </div>
+                        </div>
+
+                        <!-- Signals Summary Stats -->
+                        <div class="stats-container" id="signalsSummary">
+                            <div class="stat-card">
+                                <div class="stat-label">Total Signals</div>
+                                <div class="stat-value" id="totalSignals">0</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-label">Signal Types</div>
+                                <div class="stat-value" id="signalTypes">0</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-label">With PID Tags</div>
+                                <div class="stat-value" id="withPidTags">0</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-label">Redundant Signals</div>
+                                <div class="stat-value" id="redundantSignals">0</div>
+                            </div>
+                        </div>
+
+                        <!-- Signals Table -->
+                        <div class="table-container" id="signalsTableContainer" style="display: none;">
+                            <h4>📑 Signal Details</h4>
+                            <table class="signals-table">
+                                <thead>
+                                    <tr>
+                                        <th>Tag</th>
+                                        <th>Type</th>
+                                        <th>PID_TAG</th>
+                                        <th>Signal Origin</th>
+                                        <th>IO Redundancy</th>
+                                        <th>IS/Non-IS</th>
+                                        <th>JB Cable Name</th>
+                                        <th>Spare Requirement</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="signalsTableBody">
+                                    <!-- Signals will be populated here -->
+                                </tbody>
+                            </table>
+                        </div>
+
                         <button class="btn-success" id="designDownloadBtn">Download Output File</button>
                     </section>
 
                     <section class="logs-section">
-                        <h3>Process Logs</h3>
+                        <h3>📝 Process Logs</h3>
                         <div class="logs-container" id="designLogsContainer">
                             <p class="log-empty">Logs will appear here...</p>
                         </div>
@@ -427,12 +478,80 @@
                 if (data.success) {
                     document.getElementById('designResultsSection').style.display = 'block';
                     window.designOutputFile = data.output_file;
+                    
+                    // Display column detection results
+                    const columnDetection = data.column_mapping || {};
+                    displayColumnDetection(columnDetection, 'columnDetectionResults');
+                    
+                    // Display signals summary
+                    const signals = data.signals || [];
+                    displaySignalsSummary(signals);
+                    
+                    // Display signals table
+                    displaySignalsTable(signals);
+                    
+                    // Display logs
                     displayLogs(data.logs, 'designLogsContainer');
                 } else {
                     document.getElementById('designLogsContainer').innerHTML = `<p class="log-error">Error: ${data.error}</p>`;
                 }
+            })
+            .catch(error => {
+                document.getElementById('designProgressSection').style.display = 'none';
+                document.getElementById('designLogsContainer').innerHTML = `<p class="log-error">Error: ${error.message}</p>`;
             });
         });
+        
+        function displayColumnDetection(mapping, containerId) {
+            const container = document.getElementById(containerId);
+            let html = '<table class="detection-table"><tr><th>Attribute</th><th>Detected Column</th></tr>';
+            
+            for (const [attr, column] of Object.entries(mapping)) {
+                const status = column ? '✓' : '✗';
+                html += `<tr><td>${attr}</td><td>${status} ${column || 'Not found'}</td></tr>`;
+            }
+            html += '</table>';
+            container.innerHTML = html;
+        }
+        
+        function displaySignalsSummary(signals) {
+            const totalSignals = signals.length;
+            const signalTypes = new Set(signals.map(s => s.signal_type)).size;
+            const withPidTags = signals.filter(s => s.pid_tag && s.pid_tag !== '-').length;
+            const redundantSignals = signals.filter(s => s.io_redundancy && s.io_redundancy !== '-').length;
+            
+            document.getElementById('totalSignals').textContent = totalSignals;
+            document.getElementById('signalTypes').textContent = signalTypes;
+            document.getElementById('withPidTags').textContent = withPidTags;
+            document.getElementById('redundantSignals').textContent = redundantSignals;
+        }
+        
+        function displaySignalsTable(signals) {
+            const container = document.getElementById('signalsTableContainer');
+            const tbody = document.getElementById('signalsTableBody');
+            tbody.innerHTML = '';
+            
+            if (signals.length === 0) {
+                container.style.display = 'none';
+                return;
+            }
+            
+            signals.forEach(signal => {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td>${signal.tag || '-'}</td>
+                    <td>${signal.signal_type || '-'}</td>
+                    <td>${signal.pid_tag || '-'}</td>
+                    <td>${signal.signal_origin || '-'}</td>
+                    <td>${signal.io_redundancy || '-'}</td>
+                    <td>${signal.is_non_is || '-'}</td>
+                    <td>${signal.jb_cable_name || '-'}</td>
+                    <td>${signal.spare_channel_requirement || '-'}</td>
+                `;
+            });
+            
+            container.style.display = 'block';
+        }
         
         document.getElementById('designDownloadBtn').addEventListener('click', function() {
             if (window.designOutputFile) {
@@ -443,10 +562,14 @@
         function displayLogs(logs, containerId) {
             const container = document.getElementById(containerId);
             container.innerHTML = '';
+            if (!logs || logs.length === 0) {
+                container.innerHTML = '<p class="log-entry log-info">No logs available</p>';
+                return;
+            }
             logs.forEach(log => {
                 const logEntry = document.createElement('p');
-                logEntry.className = `log-entry log-${log.level.toLowerCase()}`;
-                logEntry.textContent = `[${log.time}] ${log.message}`;
+                logEntry.className = `log-entry log-${(log.level || 'info').toLowerCase()}`;
+                logEntry.textContent = `[${log.time || 'N/A'}] ${log.message || log}`;
                 container.appendChild(logEntry);
             });
         }
