@@ -12,7 +12,7 @@ SLOTS_PER_NODE = 16
 EXCEL_COLUMN_MAPPING = {
     # Primary identifier columns (alter for different excel formats)
     "tag": ["Tag", "PID_TAG", "pid_tag", "TagName", "tag_name"],
-    "signal_type": ["Type", "signal_type", "Signal Type", "signal type"],
+    "signal_type": ["IO_type", "Type", "signal_type", "Signal Type", "signal type"],
     
     # Design Input Review columns - Add alternative names as needed
     "pid_tag": ["PID_TAG", "PID Tag", "PID", "pid_tag"],

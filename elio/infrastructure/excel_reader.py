@@ -1,6 +1,8 @@
 import pandas as pd
 from typing import List, Dict, Optional
 from domain.models.signal import Signal
+from domain.services.signal_classifier import SignalClassifier
+from domain.services.redundancy_handler import RedundancyClassifier
 from settings import EXCEL_COLUMN_MAPPING
 
 
@@ -30,10 +32,23 @@ class ExcelReader:
         return mapping
 
     @staticmethod
+    def _handle_nan_value(value):
+        """
+        Convert NaN values to None for proper Pydantic validation.
+        Handles pandas NaN from empty Excel cells.
+        """
+        if pd.isna(value):
+            return None
+        # Convert to string and strip whitespace, return None if empty
+        str_value = str(value).strip()
+        return str_value if str_value else None
+
+    @staticmethod
     def read(file) -> List[Signal]:
         """
         Read excel file and create Signal objects.
         Handles configurable column names for different excel formats.
+        Properly handles NaN values from blank cells.
         """
         df = pd.read_excel(file)
 
@@ -48,24 +63,31 @@ class ExcelReader:
 
         signals = []
         for _, row in df.iterrows():
+            raw_signal_type = ExcelReader._handle_nan_value(row[column_mapping["signal_type"]])
+            
+            # Classify signal type to one of: AI, DI, DO, AO, SOFT
+            classified_signal_type = SignalClassifier.classify(raw_signal_type) if raw_signal_type else None
+            
             signal_data = {
-                "tag": row[column_mapping["tag"]],
-                "signal_type": row[column_mapping["signal_type"]],
+                "tag": ExcelReader._handle_nan_value(row[column_mapping["tag"]]),
+                "signal_type": classified_signal_type,
             }
 
-            # Add optional Design Input Review fields
+            # Add optional Design Input Review fields - always handle NaN
             if column_mapping.get("pid_tag"):
-                signal_data["pid_tag"] = row[column_mapping["pid_tag"]]
+                signal_data["pid_tag"] = ExcelReader._handle_nan_value(row[column_mapping["pid_tag"]])
             if column_mapping.get("signal_origin"):
-                signal_data["signal_origin"] = row[column_mapping["signal_origin"]]
+                signal_data["signal_origin"] = ExcelReader._handle_nan_value(row[column_mapping["signal_origin"]])
             if column_mapping.get("io_redundancy"):
-                signal_data["io_redundancy"] = row[column_mapping["io_redundancy"]]
+                raw_redundancy = ExcelReader._handle_nan_value(row[column_mapping["io_redundancy"]])
+                # Classify redundancy value to "Redundant" or "Non-Redundant"
+                signal_data["io_redundancy"] = RedundancyClassifier.classify(raw_redundancy) if raw_redundancy else None
             if column_mapping.get("is_non_is"):
-                signal_data["is_non_is"] = row[column_mapping["is_non_is"]]
+                signal_data["is_non_is"] = ExcelReader._handle_nan_value(row[column_mapping["is_non_is"]])
             if column_mapping.get("jb_cable_name"):
-                signal_data["jb_cable_name"] = row[column_mapping["jb_cable_name"]]
+                signal_data["jb_cable_name"] = ExcelReader._handle_nan_value(row[column_mapping["jb_cable_name"]])
             if column_mapping.get("spare_channel_requirement"):
-                signal_data["spare_channel_requirement"] = row[column_mapping["spare_channel_requirement"]]
+                signal_data["spare_channel_requirement"] = ExcelReader._handle_nan_value(row[column_mapping["spare_channel_requirement"]])
 
             signals.append(Signal(**signal_data))
 
