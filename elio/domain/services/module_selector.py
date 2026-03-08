@@ -170,10 +170,10 @@ class ModuleSelector:
         excel_path: str,
         selected_io_types: List[str],
         temperature_rating: Optional[str] = None
-    ) -> List[Dict]:
+    ) -> pd.DataFrame:
         """
         Main method to get available modules based on constraints.
-        Returns Module, IO_Type, and Usable_Channels for further processing.
+        Returns DataFrame with Module, IO_Type, and Usable_Channels for further processing.
         
         Args:
             excel_path: Path to the Yokogawa constraints Excel file
@@ -181,13 +181,7 @@ class ModuleSelector:
             temperature_rating: User selected temperature rating (default: None)
             
         Returns:
-            List of dictionaries containing {
-                "Module": module number,
-                "IO_Type": type of IO,
-                "Usable_Channels": number of usable channels,
-                "Family": IO family,
-                "Ambient_Max_C": max ambient temperature
-            }
+            DataFrame with columns {Module, IO_Type, Usable_Channels, Family, Ambient_Max_C}
         """
         try:
             print(f"\n[ModuleSelector] Starting module selection...")
@@ -213,27 +207,14 @@ class ModuleSelector:
             
             print(f"[ModuleSelector] Final result: {len(df_filtered)} modules after all filters\n")
             
-            # Step 6: Extract required columns and return
-            required_columns = ["Module", "IO_Type", "Usable_Channels"]
-            optional_columns = ["Family", "Ambient_Max_C"]
+            # Step 6: Keep only required columns and return as DataFrame
+            result_df = df_filtered[["Module", "IO_Type", "Usable_Channels"]].copy()
+            if "Family" in df_filtered.columns:
+                result_df["Family"] = df_filtered["Family"]
+            if "Ambient_Max_C" in df_filtered.columns:
+                result_df["Ambient_Max_C"] = df_filtered["Ambient_Max_C"]
             
-            result = []
-            for _, row in df_filtered.iterrows():
-                module_info = {}
-                
-                # Add required columns
-                for col in required_columns:
-                    if col in df_filtered.columns:
-                        module_info[col] = row[col]
-                
-                # Add optional columns for reference
-                for col in optional_columns:
-                    if col in df_filtered.columns:
-                        module_info[col] = row[col]
-                
-                result.append(module_info)
-            
-            return result
+            return result_df
         
         except Exception as e:
             raise Exception(f"Error getting available modules: {str(e)}")

@@ -2,6 +2,7 @@
 
 import pandas as pd
 from pathlib import Path
+from typing import Dict, List
 from infrastructure.excel_reader import ExcelReader
 from domain.services.signal_classifier import SignalClassifier
 from domain.services.module_calculator import ModuleCalculator
@@ -41,10 +42,10 @@ class DesignInputReviewService:
                 "summary_table": {},
                 "signal_data": [],
                 "signal_spares_table": {},
-                "available_modules": [],
-                "module_allocation": {},
-                "module_allocation_with_redundancy": {},
-                "module_summary": {},
+                "available_modules": pd.DataFrame(),
+                "module_allocation": pd.DataFrame(),
+                "module_allocation_with_redundancy": pd.DataFrame(),
+                "module_summary": pd.DataFrame(),
                 "rack_allocation": {}
             }
             
@@ -169,6 +170,10 @@ class DesignInputReviewService:
                 )
                 results["signal_spares_table"] = signal_spares_table
                 
+                logger_callback("\nDEBUG: Signal Distribution by Category (with spares):")
+                for signal_type, table_row in signal_spares_table.items():
+                    logger_callback(f"  {signal_type}: IS-Red({table_row['IS-Red']}+S{table_row['IS-Red Spares']}) | IS-NonRed({table_row['IS-NonRed']}+S{table_row['IS-NonRed Spares']}) | NIS-Red({table_row['NIS-Red']}+S{table_row['NIS-Red Spares']}) | NIS-NonRed({table_row['NIS-NonRed']}+S{table_row['NIS-NonRed Spares']}) = {table_row['Total']} total")
+                
                 for signal_type, table_row in signal_spares_table.items():
                     logger_callback(f"{signal_type}: IS-Red({table_row['IS-Red']})+Spares({table_row['IS-Red Spares']}) | IS-NonRed({table_row['IS-NonRed']})+Spares({table_row['IS-NonRed Spares']}) | NIS-Red({table_row['NIS-Red']})+Spares({table_row['NIS-Red Spares']}) | NIS-NonRed({table_row['NIS-NonRed']})+Spares({table_row['NIS-NonRed Spares']}) = {table_row['Total']} total")
                 
@@ -193,49 +198,101 @@ class DesignInputReviewService:
                         selected_io_types=selected_io_types,
                         temperature_rating=temperature_rating
                     )
+                    
+                    # Filter to only IOM type modules (for dynamic channel allocation)
+                    # Read Mounting_Rule to get which IO_Types have Type='IOM'
+                    try:
+                        mounting_rules_df = pd.read_excel(str(excel_path), sheet_name="Mounting_Rule")
+                        iom_io_types = set(
+                            mounting_rules_df[mounting_rules_df['Type'].astype(str).str.upper() == 'IOM']['IO_Type'].dropna().unique()
+                        )
+                        
+                        # Filter available_modules DataFrame to only IOM types
+                        if iom_io_types:
+                            available_modules = available_modules[available_modules['IO_Type'].isin(iom_io_types)].reset_index(drop=True)
+                            logger_callback(f"Filtered modules: {len(available_modules)} IOM modules available for allocation")
+                        else:
+                            logger_callback("Warning: No IOM type modules found in Mounting_Rule sheet")
+                    except Exception as e:
+                        logger_callback(f"Warning: Could not filter to IOM modules: {str(e)}")
+                    
                     results["available_modules"] = available_modules
                     logger_callback(f"Available modules loaded: {len(available_modules)} modules found")
                     
                     # Calculate module allocation
-                    module_allocation = ModuleCalculator.calculate_module_allocation(
+                    module_allocation_df = ModuleCalculator.calculate_module_allocation(
                         signal_spares_table=results["signal_spares_table"],
                         available_modules=available_modules
                     )
-                    results["module_allocation"] = module_allocation
+                    results["module_allocation"] = module_allocation_df
                     
                     # Apply redundancy doubling
-                    module_allocation_with_redundancy = ModuleCalculator.apply_redundancy_doubling(
-                        allocation=module_allocation
+                    module_allocation_with_redundancy_df = ModuleCalculator.apply_redundancy_doubling(
+                        allocation_df=module_allocation_df
                     )
-                    results["module_allocation_with_redundancy"] = module_allocation_with_redundancy
+                    results["module_allocation_with_redundancy"] = module_allocation_with_redundancy_df
                     
-                    for io_type, allocation_data in module_allocation_with_redundancy.items():
-                        if "Error" not in allocation_data:
-                            is_red = allocation_data.get("IS-Red_Modules", 0)
-                            is_nonred = allocation_data.get("IS-NonRed_Modules", 0)
-                            nis_red = allocation_data.get("NIS-Red_Modules", 0)
-                            nis_nonred = allocation_data.get("NIS-NonRed_Modules", 0)
-                            total = allocation_data.get("Modules_Required", 0)
-                            logger_callback(f"{io_type} (with redundancy): IS-Red({is_red}) + IS-NonRed({is_nonred}) + NIS-Red({nis_red}) + NIS-NonRed({nis_nonred}) = {total} total modules ({allocation_data['Module']})")
+                    for _, row in module_allocation_with_redundancy_df.iterrows():
+                        is_red = row.get("IS-Red_Modules", 0)
+                        is_nonred = row.get("IS-NonRed_Modules", 0)
+                        nis_red = row.get("NIS-Red_Modules", 0)
+                        nis_nonred = row.get("NIS-NonRed_Modules", 0)
+                        total = row.get("Total_Modules", 0)
+                        io_type = row.get("IO_Type", "")
+                        module = row.get("Module", "")
+                        logger_callback(f"{io_type} (with redundancy): IS-Red({is_red}) + IS-NonRed({is_nonred}) + NIS-Red({nis_red}) + NIS-NonRed({nis_nonred}) = {total} total modules ({module})")
                     
                     # Calculate module summary
-                    module_summary = ModuleCalculator.calculate_module_summary(
-                        allocation_before_redundancy=module_allocation,
-                        allocation_after_redundancy=module_allocation_with_redundancy
+                    module_summary_df = ModuleCalculator.calculate_module_summary(
+                        before_df=module_allocation_df,
+                        after_df=module_allocation_with_redundancy_df
                     )
-                    results["module_summary"] = module_summary
+                    results["module_summary"] = module_summary_df
                     
-                    for io_type, summary_data in module_summary.items():
-                        if "Error" not in summary_data:
-                            single_mods = summary_data.get("Single_Modules", 0)
-                            dual_red_mods = summary_data.get("Dual_Red_Modules", 0)
-                            total_fio = summary_data.get("Total_FIO_Modules", 0)
-                            logger_callback(f"{io_type} summary: Single({single_mods}) + Dual_Red({dual_red_mods}) = Total({total_fio}) modules")
+                    for _, row in module_summary_df.iterrows():
+                        single_mods = row.get("Single_Modules", 0)
+                        dual_red_mods = row.get("Dual_Red_Modules", 0)
+                        total_fio = row.get("Total_FIO_Modules", 0)
+                        io_type = row.get("IO_Type", "")
+                        logger_callback(f"{io_type} summary: Single({single_mods}) + Dual_Red({dual_red_mods}) = Total({total_fio}) modules")
+                    
+                    # Debug: Log detailed allocation before consolidation
+                    logger_callback("\nDEBUG: Pre-Consolidation Allocation (by category):")
+                    total_is_red = 0
+                    total_is_nonred = 0
+                    total_nis_red = 0
+                    total_nis_nonred = 0
+                    
+                    for _, row in module_allocation_with_redundancy_df.iterrows():
+                        is_red = row.get("IS-Red_Modules", 0)
+                        is_nonred = row.get("IS-NonRed_Modules", 0)
+                        nis_red = row.get("NIS-Red_Modules", 0)
+                        nis_nonred = row.get("NIS-NonRed_Modules", 0)
+                        io_type = row.get("IO_Type", "")
+                        logger_callback(f"  {io_type}: IS-Red({is_red}) + IS-NonRed({is_nonred}) + NIS-Red({nis_red}) + NIS-NonRed({nis_nonred})")
+                        total_is_red += is_red
+                        total_is_nonred += is_nonred
+                        total_nis_red += nis_red
+                        total_nis_nonred += nis_nonred
+                    
+                    logger_callback(f"  TOTAL: IS-Red({total_is_red}) + IS-NonRed({total_is_nonred}) + NIS-Red({total_nis_red}) + NIS-NonRed({total_nis_nonred})")
+                    if total_is_nonred == 0 and total_nis_nonred == 0:
+                        logger_callback("  ⚠️ WARNING: No NonRed signals found! All signals are redundant. Check if this is expected based on your input config.")
+                    
+                    # Log allocation category map
+                    allocation_map = ModuleCalculator.build_allocation_category_map(module_allocation_with_redundancy_df)
+                    logger_callback("\nDEBUG: Module Category Distribution:")
+                    for module_name, categories in allocation_map.items():
+                        from collections import Counter
+                        counts = Counter(categories)
+                        logger_callback(f"  {module_name}: {dict(counts)}")
+                        # Detailed breakdown
+                        logger_callback(f"    Full list: {categories}")
                     
                     # Allocate modules to rack
                     rack_allocation = RackAllocator.allocate_modules_to_rack(
                         excel_path=str(excel_path),
-                        module_summary=module_summary,
+                        module_summary=module_summary_df,
                         available_modules=available_modules
                     )
                     results["rack_allocation"] = rack_allocation
@@ -243,6 +300,46 @@ class DesignInputReviewService:
                     if rack_allocation and "Error" not in rack_allocation:
                         total_allocated = sum(1 for node in rack_allocation.values() for slot in node.values() if slot and slot != "")
                         logger_callback(f"Module allocation complete: {total_allocated} slots filled across {len(rack_allocation)} nodes")
+                        
+                        # Get IOM slots from Mounting_Rule (constraints)
+                        base_path = Path(__file__).parent.parent.parent
+                        constraints_file = base_path / "templates" / "Yokogawa_SIS_Constraints_Model_v3.xlsx"
+                        iom_slots_df = pd.DataFrame()
+                        
+                        if constraints_file.exists():
+                            try:
+                                iom_slots_df = ModuleCalculator.get_iom_slots_dataframe(str(constraints_file))
+                                logger_callback(f"IOM slots read: {len(iom_slots_df)} slots found")
+                            except Exception as e:
+                                logger_callback(f"WARNING: Could not read IOM slots: {str(e)}")
+                        
+                        # Create unified Module Allocation DataFrame
+                        # Single source of truth with: Node, Slot, Module, IS_NIS, Redundancy, Channel_Capacity
+                        module_allocation_df = ModuleCalculator.create_module_allocation_dataframe(
+                            rack_allocation=rack_allocation,
+                            module_allocation_with_redundancy=module_allocation_with_redundancy_df,
+                            available_modules=available_modules,
+                            iom_slots_df=iom_slots_df
+                        )
+                        
+                        results["slot_allocation_details_df"] = module_allocation_df
+                        
+                        if not module_allocation_df.empty:
+                            # Analyze for summary statistics
+                            slot_analysis_df = ModuleCalculator.analyze_slot_allocation(module_allocation_df)
+                            results["slot_allocation_analysis"] = slot_analysis_df
+                            
+                            # Get values from single-row DataFrame
+                            analysis = slot_analysis_df.iloc[0]
+                            logger_callback(f"Allocated: {analysis['total_slots']} slots")
+                            logger_callback(f"  IS: {analysis['is_count']} | NIS: {analysis['nis_count']}")
+                            logger_callback(f"  Redundancy=Yes: {analysis['redundancy_yes_count']} | Redundancy=No: {analysis['redundancy_no_count']}")
+                            logger_callback(f"  Total Capacity: {analysis['total_channel_capacity']} channels")
+                            
+                            # Display module allocation structure for debugging
+                            logger_callback("\n" + "="*80)
+                            logger_callback("DEBUG: MODULE ALLOCATION COMPLETE")
+                            logger_callback("="*80 + "\n")
             
             results["success"] = True
             return results
@@ -251,3 +348,5 @@ class DesignInputReviewService:
             error_msg = f"Error processing design input: {str(e)}"
             logger_callback(error_msg, "ERROR")
             return {"success": False, "error": error_msg}
+
+

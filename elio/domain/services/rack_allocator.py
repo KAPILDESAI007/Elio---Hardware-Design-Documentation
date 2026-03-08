@@ -28,7 +28,7 @@ class RackAllocator:
         return nodes
 
     @staticmethod
-    def allocate_modules_to_rack(excel_path: str, module_summary: dict, available_modules: list) -> dict:
+    def allocate_modules_to_rack(excel_path: str, module_summary: pd.DataFrame, available_modules: pd.DataFrame) -> dict:
         """
         Allocate modules to rack slots based on Mounting_Rule sheet with pairing logic.
         
@@ -40,8 +40,8 @@ class RackAllocator:
         
         Args:
             excel_path: Path to Yokogawa_SIS_Constraints_Model_v3.xlsx
-            module_summary: Dictionary from ModuleCalculator.calculate_module_summary()
-            available_modules: List of available modules
+            module_summary: DataFrame from ModuleCalculator.calculate_module_summary()
+            available_modules: DataFrame with Module, IO_Type, Usable_Channels columns
         
         Returns:
             Dictionary with all nodes and their module allocations
@@ -50,26 +50,25 @@ class RackAllocator:
             # Read Mounting_Rule sheet
             mounting_rules_df = pd.read_excel(excel_path, sheet_name="Mounting_Rule")
             
-            # Create a mapping of IO_Type to Module name
-            module_map = {}
-            for module in available_modules:
-                io_type = module.get("IO_Type")
-                module_name = module.get("Module")
-                if io_type and module_name:
-                    module_map[io_type] = module_name
-            
-            # Create a working copy of module_summary to track allocation
+            # Convert DataFrame to internal format for processing
             module_counts = {}
             total_modules_to_allocate = 0
-            for io_type, summary in module_summary.items():
-                if "Error" not in summary:
-                    module_counts[io_type] = {
-                        "module_name": module_map.get(io_type, io_type),
-                        "single_remaining": summary.get("Single_Modules", 0),
-                        "dual_red_remaining": summary.get("Dual_Red_Modules", 0)
-                    }
-                    # Use Total_FIO_Modules which already accounts for doubling
-                    total_modules_to_allocate += summary.get("Total_FIO_Modules", 0)
+            
+            for _, row in module_summary.iterrows():
+                io_type = row.get("IO_Type", "")
+                if not io_type:
+                    continue
+                
+                # Find module name from available_modules DataFrame
+                module_row = available_modules[available_modules["IO_Type"] == io_type]
+                module_name = module_row.iloc[0]["Module"] if not module_row.empty else io_type
+                
+                module_counts[io_type] = {
+                    "module_name": module_name,
+                    "single_remaining": row.get("Single_Modules", 0),
+                    "dual_red_remaining": row.get("Dual_Red_Modules", 0)
+                }
+                total_modules_to_allocate += row.get("Total_FIO_Modules", 0)
             
             # Extract Node-1 template (IOM slots only)
             node1_iom_slots = []
