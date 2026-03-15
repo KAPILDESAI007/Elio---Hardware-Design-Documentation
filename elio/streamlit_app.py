@@ -601,4 +601,25 @@ elif page == "Nest Loading & IO Assignment":
 # ============================================================================
 elif page == "Bill of Materials":
     st.header("📦 Hardware Bill of Materials")
-    st.info("Coming Soon...")
+
+    if "design_input_results" not in st.session_state or st.session_state.design_input_results is None:
+        st.warning("⚠️ Please complete Design Input Review first")
+        st.info("👉 **First:** Go to the 'Design Input Review' tab, upload a file, and process it")
+    else:
+        results = st.session_state.design_input_results
+        bom_df = results.get("bom")
+
+        if bom_df is None or not hasattr(bom_df, "empty") or bom_df.empty:
+            st.info("BOM will appear here after running Design Input Review.")
+        else:
+            st.subheader("✅ Generated BOM")
+            st.dataframe(bom_df, width='stretch')
+
+            # Export option
+            csv = bom_df.to_csv(index=False)
+            st.download_button(
+                label="📥 Download BOM",
+                data=csv,
+                file_name="bill_of_materials.csv",
+                mime="text/csv"
+            )

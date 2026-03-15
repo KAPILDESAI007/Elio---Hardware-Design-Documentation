@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Dict, List
 from infrastructure.excel_reader import ExcelReader
 from domain.services.signal_classifier import SignalClassifier
+from domain.services.bill_of_materials import BillOfMaterials
 from domain.services.module_calculator import ModuleCalculator
 from domain.services.module_selector import ModuleSelector
 from domain.services.rack_allocator import RackAllocator
@@ -244,7 +245,15 @@ class DesignInputReviewService:
                         after_df=module_allocation_with_redundancy_df
                     )
                     results["module_summary"] = module_summary_df
-                    
+
+                    # Generate Bill of Materials (BOM)
+                    bom_df = BillOfMaterials.generate_from_design_input(
+                        design_input_results=results,
+                        constraints_file=str(excel_path),
+                        logger_callback=logger_callback
+                    )
+                    results["bom"] = bom_df
+
                     for _, row in module_summary_df.iterrows():
                         single_mods = row.get("Single_Modules", 0)
                         dual_red_mods = row.get("Dual_Red_Modules", 0)

@@ -193,6 +193,10 @@ class NestLoadingService:
                     na_position='last'
                 ).reset_index(drop=True)
 
+            # Drop duplicate tag column (use PID_TAG as the canonical identifier)
+            if 'Tag' in signals_with_allocation.columns:
+                signals_with_allocation = signals_with_allocation.drop(columns=['Tag'])
+
             return {
                 "status": "success",
                 "signals_with_allocation": signals_with_allocation,
