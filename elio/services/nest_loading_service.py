@@ -30,10 +30,15 @@ class NestLoadingService:
             Dictionary with all nest loading results including updated signal table
         """
         def log(msg):
-            """Wrapper to ensure logging always happens"""
+            """Wrapper to ensure logging always happens."""
             if logger_callback:
                 logger_callback(msg)
-            print(f"[NEST_LOADING] {msg}")  # Always print to console too
+            # Protect against encoding errors on some consoles (e.g. Windows cp1252)
+            try:
+                print(f"[NEST_LOADING] {msg}")
+            except UnicodeEncodeError:
+                safe_msg = str(msg).encode('ascii', 'replace').decode('ascii')
+                print(f"[NEST_LOADING] {safe_msg}")
         
         log("Starting Nest Loading & IO Assignment...")
         log(f"Logger callback: {'Provided' if logger_callback else 'NOT PROVIDED'}")
@@ -44,6 +49,9 @@ class NestLoadingService:
             consolidated_signals = NestLoadingService._prepare_consolidated_signals(
                 design_input_results, log
             )
+            # Normalize Redundancy column using domain logic
+            from domain.services.channel_allocator import ChannelAllocator
+            consolidated_signals = ChannelAllocator.normalize_redundancy_column(consolidated_signals)
             
             log(f"Consolidated signals shape: {consolidated_signals.shape if not consolidated_signals.empty else 'EMPTY'}")
             
@@ -90,6 +98,9 @@ class NestLoadingService:
             
             # Get module allocation DataFrame (from design input review)
             module_allocation_df = design_input_results.get('slot_allocation_details_df', pd.DataFrame())
+            # Normalize Redundancy column to 'Yes'/'No' for consistent matching
+            from domain.services.channel_allocator import ChannelAllocator
+            module_allocation_df = ChannelAllocator.normalize_redundancy_column(module_allocation_df)
             if module_allocation_df.empty:
                 log("ERROR: Module allocation DataFrame not found in design input results")
                 return {
@@ -163,11 +174,24 @@ class NestLoadingService:
 
             log("Channel allocation complete.")
 
+            # Convert Redundancy column to 'Yes'/'No' for output consistency
+            if 'Redundancy' in signals_with_allocation.columns:
+                signals_with_allocation['Redundancy'] = signals_with_allocation['Redundancy'].apply(
+                    lambda x: 'Yes' if str(x).strip().lower() in ['yes', 'red', 'redundant'] else 'No'
+                )
+
             # Clean up duplicate columns - remove old redundancy columns if they exist
             if 'IO Redundancy' in signals_with_allocation.columns:
                 signals_with_allocation = signals_with_allocation.drop(columns=['IO Redundancy'])
             if 'IS/Non-IS' in signals_with_allocation.columns:
                 signals_with_allocation = signals_with_allocation.drop(columns=['IS/Non-IS'])
+
+            # Ensure placeholder rows (blank channels) appear in correct order
+            if all(col in signals_with_allocation.columns for col in ['Node', 'Slot', 'Channel']):
+                signals_with_allocation = signals_with_allocation.sort_values(
+                    by=['Node', 'Slot', 'Channel'],
+                    na_position='last'
+                ).reset_index(drop=True)
 
             return {
                 "status": "success",
@@ -234,13 +258,9 @@ class NestLoadingService:
         usable_channels_map = {}
 
         if not available_modules:
-            # Default values if not available
-            return {
-                'SAI-143H': 16,
-                'SAO-143H': 16,
-                'SDI-240D': 24,
-                'SDO-240D': 24
-            }
+            # No module data available: emit empty map and rely on upstream data sources.
+            # Avoid hard-coded module names/sizes in domain logic.
+            return {}
 
         for module in available_modules:
             if isinstance(module, dict):
@@ -262,12 +282,18 @@ class NestLoadingService:
         Returns:
             Summary statistics
         """
-        total_signals = len(signals_df)
-        allocated = len(signals_df[signals_df['Node'].notna()])
+        # Treat placeholder rows (if present) as non-signals for summary purposes
+        if 'Placeholder' in signals_df.columns:
+            real_signals = signals_df[signals_df['Placeholder'] != True]
+        else:
+            real_signals = signals_df
+
+        total_signals = len(real_signals)
+        allocated = len(real_signals[real_signals['Node'].notna()])
         unallocated = total_signals - allocated
 
         # Count by node
-        nodes_used = signals_df[signals_df['Node'].notna()]['Node'].unique()
+        nodes_used = real_signals[real_signals['Node'].notna()]['Node'].unique()
 
         return {
             "total_signals": total_signals,
@@ -288,6 +314,8 @@ class NestLoadingService:
         Returns:
             List of unallocated PID_TAGs
         """
+        if 'Placeholder' in signals_df.columns:
+            signals_df = signals_df[signals_df['Placeholder'] != True]
         unallocated = signals_df[signals_df['Node'].isna()]
         return unallocated['PID_TAG'].tolist() if not unallocated.empty else []
 

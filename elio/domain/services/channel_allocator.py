@@ -4,8 +4,71 @@ import pandas as pd
 from typing import Dict, List, Tuple
 
 
+
+
 class ChannelAllocator:
     """Allocates I/O signals to hardware module channels with redundancy handling."""
+
+    @staticmethod
+    def normalize_redundancy_column(df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Normalize Redundancy column to 'Yes'/'No' for consistency with frontend and assignment.
+        Args:
+            df: DataFrame with Redundancy column ('Red'/'NonRed', etc.)
+        Returns:
+            DataFrame with normalized Redundancy column
+        """
+        if 'Redundancy' in df.columns:
+            df['Redundancy'] = df['Redundancy'].astype(str).str.strip().str.lower()
+            df['Redundancy'] = df['Redundancy'].apply(lambda x: 'Yes' if x in ['red', 'yes', 'redundant'] else 'No')
+        return df
+
+    @staticmethod
+    def normalize_is_non_is_column(df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Normalize IS/Non-IS columns to 'IS'/'NIS' and add a unified 'IS' column for assignment.
+
+        Supports various column names used in different upstream sources:
+        - 'IS_Non_IS'
+        - 'IS_NIS'
+        - 'IS/Non-IS'
+        """
+        # Normalize all values to strings and handle missing values safely.
+        def _normalize_series(series):
+            return series.fillna('').astype(str).str.strip().str.upper()
+
+        if 'IS_NIS' in df.columns:
+            df['IS_NIS'] = _normalize_series(df['IS_NIS'])
+            df['IS_NIS'] = df['IS_NIS'].apply(lambda x: 'IS' if x.startswith('IS') else 'NIS')
+            df['IS'] = df['IS_NIS']
+            df['IS_Non_IS'] = df['IS_NIS']
+        elif 'IS_Non_IS' in df.columns:
+            df['IS_Non_IS'] = _normalize_series(df['IS_Non_IS'])
+            df['IS_Non_IS'] = df['IS_Non_IS'].apply(lambda x: 'IS' if x.startswith('IS') else 'NIS')
+            df['IS'] = df['IS_Non_IS']
+        elif 'IS/Non-IS' in df.columns:
+            df['IS/Non-IS'] = _normalize_series(df['IS/Non-IS'])
+            df['IS_Non_IS'] = df['IS/Non-IS'].apply(lambda x: 'IS' if x.startswith('IS') else 'NIS')
+            df['IS'] = df['IS_Non_IS']
+        else:
+            df['IS_Non_IS'] = 'NIS'
+            df['IS'] = 'NIS'
+        return df
+
+    @staticmethod
+    def get_canonical_type(value: str) -> str:
+        """Normalize a value to a canonical signal type (AI/DI/DO/AO/SOFT).
+
+        This is used to translate values like "DI-R", "AI", or other variant strings
+        into a consistent base type for matching.
+        """
+        if value is None:
+            return ''
+        v = str(value).upper().strip()
+        for base in ['AI', 'DI', 'DO', 'AO', 'SOFT']:
+            if base in v:
+                return base
+        return v
 
     def __init__(self):
         """Initialize channel allocator state."""
@@ -20,58 +83,211 @@ class ChannelAllocator:
         logger_callback=None
     ) -> pd.DataFrame:
         """
-        Allocate signals to module channels using two DataFrames.
-        
-        Flow:
-        1. df1 (signals_df): Signal metadata (PID_TAG, Type, IS, Redundancy)
-        2. df2 (module_allocation_df): Module allocation table (Node, Slot, Module, Redundancy, IS_NIS, Channel_Capacity)
-        3. Filter signals by (IS, Redundancy, Type) and allocate to compatible modules
-        4. Fill all 16 channels per slot before moving to next slot
-
-        Args:
-            signals_df: DataFrame with signal data (consolidated signals with IS, Redundancy, Type columns)
-            module_allocation_df: DataFrame with module allocation metadata
-            available_modules: DataFrame or list of available module specifications
-            logger_callback: Optional logging callback
-
-        Returns:
-            Updated DataFrame with Node, Slot, Channel columns filled
+        Assign signals directly from the processed DataFrame, using normalized signal types and redundancy values.
+        No category segregation; match signals to slots based on Type and Redundancy.
         """
         if logger_callback:
             logger_callback("Initializing channel allocation with module allocation DataFrame...")
 
-        # Create working copy
+        # Create working copy and normalize signal types
         result_df = signals_df.copy()
         result_df['Node'] = None
         result_df['Slot'] = None
         result_df['Channel'] = None
         result_df['Module'] = None
 
-        if logger_callback:
-            logger_callback(f"DEBUG: Starting allocation for {len(signals_df)} signals across {len(module_allocation_df)} allocated slots")
-            logger_callback(f"DEBUG: Module Allocation DataFrame structure:")
-            logger_callback(f"  Columns: {module_allocation_df.columns.tolist()}")
-            logger_callback(f"  Redundancy values: {module_allocation_df['Redundancy'].unique().tolist() if 'Redundancy' in module_allocation_df.columns else 'N/A'}")
-            logger_callback(f"  IS_NIS values: {module_allocation_df['IS_NIS'].unique().tolist() if 'IS_NIS' in module_allocation_df.columns else 'N/A'}")
-            logger_callback(f"  Module types: {module_allocation_df['Module'].unique().tolist() if 'Module' in module_allocation_df.columns else 'N/A'}")
+        # Normalize IS_Non_IS column and propagate 'IS' column
+        result_df = ChannelAllocator.normalize_is_non_is_column(result_df)
 
-        # Allocate signals in priority order: IS-Red, IS-NonRed, NIS-Red, NIS-NonRed
-        allocation_order = [
-            ('IS', 'Red'),
-            ('IS', 'NonRed'),
-            ('NIS', 'Red'),
-            ('NIS', 'NonRed')
-        ]
-        
-        for is_status, redundancy in allocation_order:
-            self._allocate_signals_by_category(
-                result_df, 
-                module_allocation_df, 
-                available_modules, 
-                logger_callback,
-                is_status=is_status,
-                redundancy=redundancy
-            )
+        # Normalize signal types (AI-R, DI-R, etc. → AI, DI, etc.)
+        result_df['Type'] = result_df['Type'].apply(ChannelAllocator.get_canonical_type)
+
+        # Normalize Redundancy values in both DataFrames (Yes/No)
+        def normalize_redundancy(val):
+            v = str(val).strip().lower()
+            return 'Yes' if v in ['yes', 'red', 'redundant'] else 'No'
+        result_df = ChannelAllocator.normalize_redundancy_column(result_df)
+        module_allocation_df = ChannelAllocator.normalize_redundancy_column(module_allocation_df)
+
+        # Normalize IS/Non-IS columns in slot allocation DataFrame
+        # (Supports IS_NIS, IS_Non_IS, IS/Non-IS as input column names)
+        if any(c in module_allocation_df.columns for c in ['IS_NIS', 'IS_Non_IS', 'IS/Non-IS']):
+            module_allocation_df = ChannelAllocator.normalize_is_non_is_column(module_allocation_df)
+
+        # Assign signals directly
+        # Sort slots to ensure deterministic ordering for redundancy slot reservation.
+        module_allocation_df = module_allocation_df.sort_values(by=['Node', 'Slot'])
+
+        slot_usage = {}
+        slot_order = []
+        for idx, slot_row in module_allocation_df.iterrows():
+            node = int(slot_row['Node'])
+            slot = int(slot_row['Slot'])
+            module_name = slot_row['Module']
+            slot_key = (node, slot)
+
+            # Determine slot type using IO_Type column (must be provided in slot allocation details).
+            # If missing, we treat it as unknown and rely on the source data being correct.
+            slot_type = slot_row.get('IO_Type', None)
+            if slot_type:
+                slot_type = ChannelAllocator.get_canonical_type(slot_type)
+            else:
+                slot_type = ''  # No inferencing; assume input table provides IO_Type
+
+            # Use per-slot channel capacity (from slot allocation DataFrame) if available
+            slot_capacity = int(slot_row.get('Channel_Capacity', 16)) if slot_row.get('Channel_Capacity') is not None else 16
+
+            slot_usage[slot_key] = {
+                'module_name': module_name,
+                'Type': slot_type,
+                'Redundancy': normalize_redundancy(slot_row.get('Redundancy', 'No')),
+                'IS': slot_row.get('IS', slot_row.get('IS_Non_IS', 'NIS')),
+                'capacity': slot_capacity,
+                # next_channel is the next free channel for this slot (1..capacity)
+                'next_channel': self.slot_channel_usage.get(slot_key, 1),
+                'reserved': False,
+                'reserved_slot_created': False,
+            }
+            slot_order.append(slot_key)
+
+        # Assign signals
+        unassigned_log_count = 0
+        max_unassigned_logs = 5
+
+        for idx, signal_row in result_df.iterrows():
+            pid = signal_row['PID_TAG']
+            signal_type = signal_row['Type']
+            signal_red = signal_row['Redundancy']
+            signal_is = signal_row['IS']
+
+            # Skip already assigned signals (e.g. placeholders or previously assigned)
+            if pd.notna(signal_row.get('Node')) and pd.notna(signal_row.get('Slot')):
+                continue
+
+            assigned = False
+            failed_conditions = []
+
+            # Find slots that match type, redundancy, IS and are not reserved
+            matching_slots = [
+                k for k in slot_order
+                if slot_usage[k]['Type'] == signal_type and not slot_usage[k].get('reserved', False)
+            ]
+            if not matching_slots:
+                available_types = sorted({v['Type'] for v in slot_usage.values()})
+                failed_conditions.append(f"No slots for Type={signal_type} (available types: {available_types})")
+            else:
+                for slot_key in matching_slots:
+                    slot_info = slot_usage[slot_key]
+
+                    if slot_info['Redundancy'] != signal_red:
+                        failed_conditions.append(f"Redundancy mismatch: slot={slot_info['Redundancy']} signal={signal_red}")
+                        continue
+                    if slot_info['IS'] != signal_is:
+                        failed_conditions.append(f"IS mismatch: slot={slot_info['IS']} signal={signal_is}")
+                        continue
+
+                    channel_num = slot_info['next_channel']
+                    capacity = slot_info['capacity']
+
+                    if signal_red == 'Yes':
+                        # Full slot reserved for redundant signals; we only ever assign to this slot's channels.
+                        if channel_num > capacity:
+                            failed_conditions.append(f"Slot {slot_key} full (capacity {capacity})")
+                            continue
+
+                        # Assign redundant signal to this slot & channel
+                        result_df.at[idx, 'Node'] = slot_key[0]
+                        result_df.at[idx, 'Slot'] = slot_key[1]
+                        result_df.at[idx, 'Channel'] = channel_num
+                        result_df.at[idx, 'Module'] = slot_info['module_name']
+                        self.processed_signals.add(pid)
+
+                        # If this slot has not yet reserved the next slot, reserve it now.
+                        if not slot_info.get('reserved_slot_created', False):
+                            slot_info['reserved_slot_created'] = True
+                            next_slot = None
+                            current_index = slot_order.index(slot_key)
+                            for next_key in slot_order[current_index + 1:]:
+                                next_info = slot_usage[next_key]
+                                if (
+                                    next_info['Type'] == signal_type
+                                    and next_info['Redundancy'] == signal_red
+                                    and next_info['IS'] == signal_is
+                                    and not next_info.get('reserved', False)
+                                ):
+                                    next_slot = next_key
+                                    break
+
+                            if next_slot:
+                                slot_usage[next_slot]['reserved'] = True
+                                placeholder = {c: None for c in result_df.columns}
+                                placeholder['Node'] = next_slot[0]
+                                placeholder['Slot'] = next_slot[1]
+                                placeholder['Channel'] = None
+                                placeholder['Module'] = slot_info['module_name']
+                                placeholder['Type'] = signal_type
+                                placeholder['Redundancy'] = signal_red
+                                placeholder['IS'] = signal_is
+                                placeholder['Placeholder'] = True
+                                result_df = pd.concat([result_df, pd.DataFrame([placeholder])], ignore_index=True)
+
+                        # Advance to next channel in current slot.
+                        slot_info['next_channel'] = channel_num + 1
+                        self.slot_channel_usage[slot_key] = max(0, slot_info['next_channel'] - 1)
+                        assigned = True
+                        break
+
+                    # Non-redundant signal assignment
+                    if channel_num > capacity:
+                        failed_conditions.append(f"Slot {slot_key} full (capacity {capacity})")
+                        continue
+
+                    result_df.at[idx, 'Node'] = slot_key[0]
+                    result_df.at[idx, 'Slot'] = slot_key[1]
+                    result_df.at[idx, 'Channel'] = channel_num
+                    result_df.at[idx, 'Module'] = slot_info['module_name']
+                    self.processed_signals.add(pid)
+
+                    slot_info['next_channel'] = channel_num + 1
+                    self.slot_channel_usage[slot_key] = max(0, slot_info['next_channel'] - 1)
+                    assigned = True
+                    break
+
+            if not assigned:
+                # Limit log spam when many signals cannot be assigned.
+                # Only show details for the first few unassigned signals.
+                unassigned_log_count += 1
+                if logger_callback and unassigned_log_count <= max_unassigned_logs:
+                    display_conditions = failed_conditions[:5]
+                    if len(failed_conditions) > 5:
+                        display_conditions.append(f"...(+{len(failed_conditions) - 5} more)")
+
+                    logger_callback(f"[DEBUG] Could not assign signal {pid} (Type={signal_type}, Redundancy={signal_red}, IS={signal_is})")
+                    logger_callback(f"[DEBUG] Assignment failed due to: {display_conditions if display_conditions else 'No available slot/channel'}")
+                elif logger_callback and unassigned_log_count == max_unassigned_logs + 1:
+                    logger_callback(f"[DEBUG] ...skipping further unassigned signal details (limit {max_unassigned_logs})")
+
+            if not assigned:
+                # Limit log spam when many signals cannot be assigned.
+                # Only show details for the first few unassigned signals.
+                unassigned_log_count += 1
+                if logger_callback and unassigned_log_count <= max_unassigned_logs:
+                    display_conditions = failed_conditions[:5]
+                    if len(failed_conditions) > 5:
+                        display_conditions.append(f"...(+{len(failed_conditions) - 5} more)")
+
+                    logger_callback(f"[DEBUG] Could not assign signal {pid} (Type={signal_type}, Redundancy={signal_red}, IS={signal_is})")
+                    logger_callback(f"[DEBUG] Assignment failed due to: {display_conditions if display_conditions else 'No available slot/channel'}")
+                elif logger_callback and unassigned_log_count == max_unassigned_logs + 1:
+                    logger_callback(f"[DEBUG] ...skipping further unassigned signal details (limit {max_unassigned_logs})")
+
+        # Debug: Show 5 sample unallocated rows for each signal type
+        if logger_callback:
+            for t in ['AI', 'DI', 'DO', 'AO']:
+                unallocated = result_df[(result_df['Type'] == t) & (result_df['Node'].isna())]
+                if not unallocated.empty:
+                    logger_callback(f"[DEBUG] Unallocated {t} signals: {len(unallocated)}")
+                    logger_callback(unallocated[['PID_TAG', 'Type', 'Redundancy', 'IS', 'Node', 'Slot', 'Channel']].head(5).to_dict('records'))
 
         if logger_callback:
             logger_callback("Channel allocation complete.")
@@ -110,12 +326,20 @@ class ChannelAllocator:
             (signals_df['Redundancy'] == redundancy) &
             (signals_df['Node'].isna())  # Only unallocated signals
         ]
-        
+
+        # Debug: Show 5 sample rows for this category with None for Node, Slot, Channel
+        if logger_callback:
+            logger_callback(f"\n[DEBUG] {is_status}-{redundancy} unallocated signals: {len(category_signals)}")
+            if not category_signals.empty:
+                debug_cols = ['PID_TAG', 'Type', 'IS', 'Redundancy', 'Node', 'Slot', 'Channel']
+                logger_callback(f"  [DEBUG] Sample rows (None for Node/Slot/Channel):")
+                logger_callback(category_signals[debug_cols].head(5).to_dict('records'))
+
         if category_signals.empty:
             if logger_callback:
                 logger_callback(f"No unallocated signals for {is_status}-{redundancy}")
             return
-        
+
         if logger_callback:
             logger_callback(f"\nAllocating {len(category_signals)} signals for {is_status}-{redundancy}")
             # Show sample of signals being allocated
@@ -192,60 +416,94 @@ class ChannelAllocator:
             compatible_slots: Filtered slots that can accept this type
             logger_callback: Optional logging callback
         """
-        slot_index = 0
         skipped_slots = set()
-        
-        for _, signal_row in type_signals.iterrows():
+        slot_channel_capacity = 16  # Default channel capacity per slot
+
+        # Prepare a list of available slots and their current channel usage
+        slot_usage = {}
+        for idx, slot_row in compatible_slots.iterrows():
+            node = int(slot_row['Node'])
+            slot = int(slot_row['Slot'])
+            module_name = slot_row['Module']
+            slot_key = (node, slot)
+            slot_usage[slot_key] = {
+                'module_name': module_name,
+                'used_channels': self.slot_channel_usage.get(slot_key, 0)
+            }
+
+        # Assign signals to slots, filling channels sequentially
+        signal_idx = 0
+        total_signals = len(type_signals)
+        slot_keys = [k for k in slot_usage.keys() if k not in skipped_slots]
+        slot_ptr = 0
+
+        while signal_idx < total_signals and slot_ptr < len(slot_keys):
+            slot_key = slot_keys[slot_ptr]
+            module_name = slot_usage[slot_key]['module_name']
+            used_channels = slot_usage[slot_key]['used_channels']
+
+            # Prepare the next signal
+            signal_row = type_signals.iloc[signal_idx]
             pid = signal_row['PID_TAG']
-            is_redundant = signal_row['Redundancy'] == 'Red'
-            
-            # Find next available slot
-            while slot_index < len(compatible_slots):
-                current_slot_row = compatible_slots.iloc[slot_index]
-                node = int(current_slot_row['Node'])
-                slot = int(current_slot_row['Slot'])
-                module_name = current_slot_row['Module']
-                
-                slot_key = (node, slot)
-                
-                # Skip this slot if it was marked to be skipped
-                if slot_key in skipped_slots:
-                    slot_index += 1
-                    continue
-                
-                # Get current channel usage for this slot
-                if slot_key not in self.slot_channel_usage:
-                    self.slot_channel_usage[slot_key] = 0
-                
-                current_channel = self.slot_channel_usage[slot_key] + 1
-                
-                # Check if slot has available channels
-                if current_channel <= 16:
-                    # Allocate signal to this slot and channel
-                    sig_idx = signals_df[signals_df['PID_TAG'] == pid].index[0]
-                    signals_df.at[sig_idx, 'Node'] = node
-                    signals_df.at[sig_idx, 'Slot'] = slot
-                    signals_df.at[sig_idx, 'Channel'] = current_channel
-                    signals_df.at[sig_idx, 'Module'] = module_name
-                    
-                    self.slot_channel_usage[slot_key] = current_channel
-                    self.processed_signals.add(pid)
-                    
-                    # If redundant signal, skip next slot as they must pair
-                    if is_redundant and slot_index + 1 < len(compatible_slots):
-                        next_slot_row = compatible_slots.iloc[slot_index + 1]
-                        next_slot_key = (int(next_slot_row['Node']), int(next_slot_row['Slot']))
-                        skipped_slots.add(next_slot_key)
-                    
-                    # Move to next signal
-                    slot_index += 1
-                    break
-                else:
-                    # This slot is full, move to next
-                    slot_index += 1
-            
-            
-            # If we couldn't find a slot, signal remains unallocated
+            is_redundant = str(signal_row.get('Redundancy', '')).strip().lower() == 'yes'
+
+            # Reserve one slot per redundant signal (and leave the next slot blank)
+            if is_redundant:
+                # Assign this signal only to the current slot (channel 1)
+                sig_idx = signals_df[signals_df['PID_TAG'] == pid].index[0]
+                signals_df.at[sig_idx, 'Node'] = slot_key[0]
+                signals_df.at[sig_idx, 'Slot'] = slot_key[1]
+                signals_df.at[sig_idx, 'Channel'] = 1
+                signals_df.at[sig_idx, 'Module'] = module_name
+
+                # Mark this slot as used (no other signal should share it)
+                slot_usage[slot_key]['used_channels'] = slot_channel_capacity
+                self.slot_channel_usage[slot_key] = slot_channel_capacity
+                self.processed_signals.add(pid)
+
+                # Reserve the next slot (leave it blank in output)
+                if slot_ptr + 1 < len(slot_keys):
+                    reserved_slot_key = slot_keys[slot_ptr + 1]
+                    skipped_slots.add(reserved_slot_key)
+
+                    placeholder = {c: None for c in signals_df.columns}
+                    placeholder['Node'] = reserved_slot_key[0]
+                    placeholder['Slot'] = reserved_slot_key[1]
+                    placeholder['Channel'] = None
+                    placeholder['Module'] = module_name
+                    placeholder['Type'] = signal_row.get('Type')
+                    placeholder['Redundancy'] = 'Yes'
+                    placeholder['IS'] = signal_row.get('IS')
+                    placeholder['Placeholder'] = True
+                    signals_df.loc[len(signals_df)] = placeholder
+
+                    slot_keys = [k for k in slot_usage.keys() if k not in skipped_slots]
+                    slot_ptr = slot_keys.index(slot_key)
+
+                signal_idx += 1
+                slot_ptr += 1
+                continue
+
+            # Non-redundant signals: fill slots by channel capacity
+            while used_channels < slot_channel_capacity and signal_idx < total_signals:
+                signal_row = type_signals.iloc[signal_idx]
+                pid = signal_row['PID_TAG']
+
+                sig_idx = signals_df[signals_df['PID_TAG'] == pid].index[0]
+                signals_df.at[sig_idx, 'Node'] = slot_key[0]
+                signals_df.at[sig_idx, 'Slot'] = slot_key[1]
+                signals_df.at[sig_idx, 'Channel'] = used_channels + 1
+                signals_df.at[sig_idx, 'Module'] = module_name
+
+                self.slot_channel_usage[slot_key] = used_channels + 1
+                slot_usage[slot_key]['used_channels'] = used_channels + 1
+                self.processed_signals.add(pid)
+
+                used_channels += 1
+                signal_idx += 1
+
+            # Move to next slot
+            slot_ptr += 1
 
     def _get_target_module_for_type(
         self,
@@ -260,7 +518,7 @@ class ChannelAllocator:
             available_modules: DataFrame or list with module specifications
 
         Returns:
-            Module name (e.g., SAI-143H) or None if not found
+            Module name or None if not found
         """
         # Map signal types to IO types
         type_io_map = {

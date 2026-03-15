@@ -2,6 +2,7 @@
 import math
 import pandas as pd
 from typing import Dict, List
+from settings import MAX_NODES_PER_CONTROLLER
 from domain.models.module_instance import ModuleInstance
 
 
@@ -77,31 +78,73 @@ class ModuleCalculator:
         return modules_required
 
     @staticmethod
-    def calculate_module_allocation(signal_spares_table: Dict, available_modules: pd.DataFrame) -> pd.DataFrame:
+    def calculate_module_allocation(signal_spares_table: Dict, available_modules: pd.DataFrame, logger=None) -> pd.DataFrame:
         rows = []
-        
-        # Create IO_Type to first available Module name mapping from DataFrame
+
+        # Create normalized IO_Type mapping for available modules
         if available_modules.empty:
             return pd.DataFrame()
-        
+
+        # Normalize module IO_Type values (strip/upper) for robust matching
+        available_modules = available_modules.copy()
+        if 'IO_Type' in available_modules.columns:
+            available_modules['IO_Type'] = available_modules['IO_Type'].astype(str).str.strip().str.upper()
+
         module_map = {}
         for _, row in available_modules.iterrows():
             io_type = row.get("IO_Type")
+            if not io_type:
+                continue
             if io_type not in module_map:  # Use first available for each IO_Type
                 module_map[io_type] = {
                     "Module": row.get("Module", ""),
                     "Usable_Channels": row.get("Usable_Channels", 0)
                 }
-        
+
+        # Normalize signal_spares_table keys to uppercase for matching
+        normalized_signal_table = {}
         for io_type, signal_data in signal_spares_table.items():
+            key = str(io_type).strip().upper()
+            normalized_signal_table[key] = signal_data
+
+        for io_type, signal_data in normalized_signal_table.items():
             if io_type not in module_map:
+                unknown_module_name = f"UNKNOWN-{io_type}"
+                if logger:
+                    logger(
+                        f"WARNING: No module mapping found for IO_Type '{io_type}' - using placeholder '{unknown_module_name}' for analysis"
+                    )
+                # Still include a row to allow downstream analysis, even if module is unknown
+                rows.append({
+                    "IO_Type": io_type,
+                    "Module": unknown_module_name,
+                    "IS-Red_Modules": 0,
+                    "IS-NonRed_Modules": 0,
+                    "NIS-Red_Modules": 0,
+                    "NIS-NonRed_Modules": 0,
+                    "Total_Modules": 0
+                })
                 continue
-            
+
             module_info = module_map[io_type]
             module_name = module_info.get("Module", "")
             usable_channels = module_info.get("Usable_Channels", 0)
             
             if not module_name or usable_channels <= 0:
+                unknown_module_name = f"UNKNOWN-{io_type}"
+                if logger:
+                    logger(
+                        f"WARNING: Module mapping for IO_Type '{io_type}' is invalid (Module='{module_name}', Usable_Channels={usable_channels}); using placeholder '{unknown_module_name}'"
+                    )
+                rows.append({
+                    "IO_Type": io_type,
+                    "Module": unknown_module_name,
+                    "IS-Red_Modules": 0,
+                    "IS-NonRed_Modules": 0,
+                    "NIS-Red_Modules": 0,
+                    "NIS-NonRed_Modules": 0,
+                    "Total_Modules": 0
+                })
                 continue
             
             is_red = math.ceil((signal_data.get("IS-Red", 0) + signal_data.get("IS-Red Spares", 0)) / usable_channels) if (signal_data.get("IS-Red", 0) + signal_data.get("IS-Red Spares", 0)) > 0 else 0
@@ -118,8 +161,28 @@ class ModuleCalculator:
                 "NIS-NonRed_Modules": nis_nonred,
                 "Total_Modules": is_red + is_nonred + nis_red + nis_nonred
             })
-        
-        return pd.DataFrame(rows)
+
+        allocation_df = pd.DataFrame(rows)
+
+        # Diagnostics: warn if we had expected IO types but no allocation rows were generated
+        if logger and normalized_signal_table:
+            expected = set(normalized_signal_table.keys())
+            actual = set(allocation_df["IO_Type"].astype(str).str.upper().unique())
+            missing = expected - actual
+            if missing:
+                logger(f"WARNING: Expected IO types {sorted(missing)} in allocation but none were generated.")
+
+            # Warn when DO has redundancy but ended with zero modules
+            if "DO" in expected:
+                do_row = allocation_df[allocation_df["IO_Type"].astype(str).str.upper() == "DO"]
+                if not do_row.empty:
+                    do_row = do_row.iloc[0]
+                    has_red_signals = (normalized_signal_table.get("DO", {}).get("IS-Red", 0) > 0 or
+                                       normalized_signal_table.get("DO", {}).get("NIS-Red", 0) > 0)
+                    if has_red_signals and do_row.get("Total_Modules", 0) == 0:
+                        logger("WARNING: DO has redundant signals but module allocation count is 0; check module catalog / usable channel values.")
+
+        return allocation_df
 
     @staticmethod
     def apply_redundancy_doubling(allocation_df: pd.DataFrame) -> pd.DataFrame:
@@ -228,16 +291,26 @@ class ModuleCalculator:
         
         result_df['IS_NIS'] = result_df['Signal_Category'].str.extract(r'^(IS|NIS)', expand=False)
         result_df['Redundancy'] = result_df['Signal_Category'].str.extract(r'(Red|NonRed)$', expand=False).map({'Red': 'Yes', 'NonRed': 'No'})
-        
-        # Add Channel_Capacity from available_modules DataFrame or use defaults
+        # Normalize IO Redundancy column if present
+        if 'IO Redundancy' in result_df.columns:
+            result_df['IO Redundancy'] = result_df['IO Redundancy'].astype(str).str.strip().str.lower()
+            result_df['IO Redundancy'] = result_df['IO Redundancy'].apply(lambda x: 'Yes' if x in ['red', 'yes', 'redundant'] else 'No')
+        # Add Channel_Capacity and IO_Type from available_modules. If not present, leave blank.
         if available_modules is not None and not available_modules.empty:
             module_channels = dict(zip(available_modules['Module'], available_modules['Usable_Channels']))
             result_df['Channel_Capacity'] = result_df['Module'].map(module_channels).fillna(0).astype(int)
+
+            if 'IO_Type' in available_modules.columns:
+                io_type_map = dict(zip(available_modules['Module'], available_modules['IO_Type']))
+                result_df['IO_Type'] = result_df['Module'].map(io_type_map).fillna('')
+            else:
+                result_df['IO_Type'] = ''
         else:
-            default_channels = {'SAI-143H': 16, 'SAO-143H': 8, 'SDI-240D': 32, 'SDO-240D': 32}
-            result_df['Channel_Capacity'] = result_df['Module'].map(default_channels).fillna(0).astype(int)
+            # No available_modules data; do not hardcode module types or capacities.
+            result_df['Channel_Capacity'] = 0
+            result_df['IO_Type'] = ''
         
-        result_df = result_df[['Node', 'Slot', 'Module', 'IS_NIS', 'Redundancy', 'Channel_Capacity']]
+        result_df = result_df[['Node', 'Slot', 'Module', 'IO_Type', 'IS_NIS', 'Redundancy', 'Channel_Capacity']]
         result_df = result_df.sort_values(by=['Node', 'Slot']).reset_index(drop=True)
         
         return result_df
@@ -250,72 +323,92 @@ class ModuleCalculator:
         """
         Analyze which modules are available for each IS/Redundancy category 
         and what signal types are present in each category.
-        
+
+        Note:
+            - This helper is intended as a diagnostic/visibility aid.
+            - It does not affect channel assignment logic.
+
         Returns flattened DataFrame for easy display/filtering in service layer.
-        
+
         Args:
             signals_df: Consolidated signals DataFrame (must have IS, Redundancy, Type, PID_TAG columns)
             module_allocation_df: Module allocation DataFrame with Redundancy column
-        
+
         Returns:
             DataFrame with columns:
             - Category: IS-Red, IS-NonRed, NIS-Red, NIS-NonRed
             - Signal_Type: AI, DI, DO, AO
-            - Expected_Module: SAI-143H, SDI-240D, SDO-240D, SAO-143H
-            - Available: True if module exists for this category, False otherwise
-            - Available_Slots: Number of slots for the expected module in this category
+            - Expected_Module: Module(s) expected to satisfy that signal type (based on IO_Type)
+            - Available: True if a matching module exists in the category, False otherwise
+            - Available_Slots: Number of slots for the expected module(s) in this category
             - Total_Category_Slots: Total slots available in this category
             - Signal_Count: Number of this signal type in this category
             - Category_Signal_Total: Total signals in this category
         """
-        type_module_map = {
-            'AI': 'SAI-143H',
-            'AO': 'SAO-143H',
-            'DI': 'SDI-240D',
-            'DO': 'SDO-240D'
-        }
-        
+        def _normalize_redundancy(val):
+            v = str(val).strip().lower()
+            return 'Yes' if v in ['red', 'yes', 'redundant'] else 'No'
+
+        # Normalize redundancy values so the analysis works regardless of Red/NonRed vs Yes/No usage
+        signals_df = signals_df.copy()
+        module_allocation_df = module_allocation_df.copy()
+        if 'Redundancy' in signals_df.columns:
+            signals_df['Redundancy'] = signals_df['Redundancy'].apply(_normalize_redundancy)
+        if 'Redundancy' in module_allocation_df.columns:
+            module_allocation_df['Redundancy'] = module_allocation_df['Redundancy'].apply(_normalize_redundancy)
+
+        # If module_allocation_df includes IO_Type, use it to map signal types to available modules.
+        # This avoids hard-coded module name expectations and keeps the analysis data-driven.
+        io_type_to_modules = {}
+        if 'IO_Type' in module_allocation_df.columns:
+            for io_type, group in module_allocation_df.groupby('IO_Type'):
+                io_type_to_modules[io_type] = sorted(group['Module'].dropna().unique())
+
         rows = []
-        
+
         for is_status in ['IS', 'NIS']:
             for redundancy in ['Red', 'NonRed']:
                 category = f"{is_status}-{redundancy}"
                 redundancy_value = 'Yes' if redundancy == 'Red' else 'No'
-                
+
                 # Filter signals for this category
                 category_signals = signals_df[
-                    (signals_df['IS'] == is_status) & 
-                    (signals_df['Redundancy'] == redundancy)
+                    (signals_df.get('IS') == is_status) & 
+                    (signals_df.get('Redundancy') == redundancy_value)
                 ]
-                
+
                 # Get module slots available for this redundancy type
-                category_slots = module_allocation_df[module_allocation_df['Redundancy'] == redundancy_value]
-                
+                category_slots = module_allocation_df[module_allocation_df.get('Redundancy') == redundancy_value]
+
                 # Get module breakdown for this redundancy type
-                module_breakdown = category_slots['Module'].value_counts().to_dict()
+                module_breakdown = category_slots['Module'].value_counts().to_dict() if not category_slots.empty else {}
                 total_category_slots = len(category_slots)
-                
+
                 # Get signal types in this category
                 signal_types = category_signals['Type'].value_counts().to_dict() if not category_signals.empty else {}
                 category_signal_total = len(category_signals)
-                
+
                 # Create one row per signal type (flatten the data)
                 for signal_type, signal_count in signal_types.items():
-                    expected_module = type_module_map.get(signal_type, 'Unknown')
-                    is_available = expected_module in module_breakdown
-                    available_slots = module_breakdown.get(expected_module, 0)
-                    
+                    expected_modules = io_type_to_modules.get(signal_type, [])
+                    # Determine slots available for any of the expected modules
+                    available_slots = sum(module_breakdown.get(m, 0) for m in expected_modules)
+                    is_available = available_slots > 0
+
+                    # Format module list for readability
+                    expected_module_label = ', '.join(expected_modules) if expected_modules else 'Unknown'
+
                     rows.append({
                         'Category': category,
                         'Signal_Type': signal_type,
-                        'Expected_Module': expected_module,
+                        'Expected_Module': expected_module_label,
                         'Available': is_available,
                         'Available_Slots': available_slots,
                         'Total_Category_Slots': total_category_slots,
                         'Signal_Count': signal_count,
                         'Category_Signal_Total': category_signal_total
                     })
-        
+
         # Return DataFrame with all analysis rows
         if rows:
             return pd.DataFrame(rows)
@@ -386,8 +479,8 @@ class ModuleCalculator:
                     # Applies to Node 1
                     rows_list.append({'Node': 1, 'Slot': slot, 'Type': slot_type})
                 elif node_notation == '>=2':
-                    # Applies to Nodes 2-7
-                    for node_num in range(2, 8):
+                    # Applies to Nodes 2..MAX_NODES_PER_CONTROLLER
+                    for node_num in range(2, MAX_NODES_PER_CONTROLLER + 1):
                         rows_list.append({'Node': node_num, 'Slot': slot, 'Type': slot_type})
                 elif node_notation == 'Node 1 Only':
                     # Single-node system: applies to Node 1 only

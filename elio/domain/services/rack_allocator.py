@@ -1,4 +1,4 @@
-from settings import SLOTS_PER_NODE
+from settings import SLOTS_PER_NODE, MAX_NODES_PER_CONTROLLER
 from domain.models.node import Node
 import pandas as pd
 
@@ -28,7 +28,12 @@ class RackAllocator:
         return nodes
 
     @staticmethod
-    def allocate_modules_to_rack(excel_path: str, module_summary: pd.DataFrame, available_modules: pd.DataFrame) -> dict:
+    def allocate_modules_to_rack(
+        excel_path: str,
+        module_summary: pd.DataFrame,
+        available_modules: pd.DataFrame,
+        logger=None
+    ) -> dict:
         """
         Allocate modules to rack slots based on Mounting_Rule sheet with pairing logic.
         
@@ -42,10 +47,12 @@ class RackAllocator:
             excel_path: Path to Yokogawa_SIS_Constraints_Model_v3.xlsx
             module_summary: DataFrame from ModuleCalculator.calculate_module_summary()
             available_modules: DataFrame with Module, IO_Type, Usable_Channels columns
+            logger: Optional logging function (callable)
         
         Returns:
             Dictionary with all nodes and their module allocations
         """
+        log = logger or (lambda msg, level=None: print(msg))
         try:
             # Read Mounting_Rule sheet
             mounting_rules_df = pd.read_excel(excel_path, sheet_name="Mounting_Rule")
@@ -69,6 +76,8 @@ class RackAllocator:
                     "dual_red_remaining": row.get("Dual_Red_Modules", 0)
                 }
                 total_modules_to_allocate += row.get("Total_FIO_Modules", 0)
+
+            log(f"[RackAllocator] Starting allocation. total_modules_to_allocate={total_modules_to_allocate}, module_counts={module_counts}")
             
             # Extract Node-1 template (IOM slots only)
             node1_iom_slots = []
@@ -96,10 +105,37 @@ class RackAllocator:
                     pattern_rules[slot_key] = item_type
             
             node1_iom_slots = sorted(node1_iom_slots)
-            
-            # Calculate nodes needed: Node-1 has IOM slots, subsequent nodes have fixed slots
+            log(f"[RackAllocator] Node-1 IOM slots count: {len(node1_iom_slots)}")
+
+            # Calculate nodes needed: Node-1 and subsequent nodes have different IOM slot counts
             slots_per_node = 12  # Standard rack slots
-            nodes_needed = max(1, -(-total_modules_to_allocate // slots_per_node))  # Ceiling division
+            node1_iom_slots_count = len(node1_iom_slots)
+            node_ge2_iom_slots_count = sum(1 for item in pattern_rules.values() if str(item).upper() == "IOM")
+            if node_ge2_iom_slots_count == 0:
+                # If mounting rules do not specify IOM slots for >=2 nodes, assume full rack could be used
+                node_ge2_iom_slots_count = slots_per_node
+
+            # Determine how many nodes we need based on actual available IOM slots (not total slots)
+            remaining_modules = total_modules_to_allocate
+            # Node-1 uses its IOM slots first
+            remaining_modules -= min(remaining_modules, node1_iom_slots_count)
+            nodes_needed = 1
+            if remaining_modules > 0:
+                nodes_needed += -(-remaining_modules // node_ge2_iom_slots_count)
+
+            log(
+                f"[RackAllocator] nodes_needed={nodes_needed} based on total_modules_to_allocate={total_modules_to_allocate}, "
+                f"node1_iom_slots={node1_iom_slots_count}, node>=2_iom_slots={node_ge2_iom_slots_count}"
+            )
+
+            # Cap nodes to the supported maximum (based on controller constraints)
+            max_nodes = MAX_NODES_PER_CONTROLLER
+            if nodes_needed > max_nodes:
+                log(
+                    f"[RackAllocator] Warning: required nodes ({nodes_needed}) exceed max supported nodes ({max_nodes}). "
+                    "Truncating allocation to max available nodes."
+                )
+                nodes_needed = max_nodes
             
             # Build all nodes
             rack_allocation = {}
@@ -141,19 +177,9 @@ class RackAllocator:
                         consecutive_slots = 2
                 
                 slot_filled = False
-                
-                # First priority: Single modules (1 slot)
-                if not slot_filled:
-                    for io_type in module_counts:
-                        if module_counts[io_type]["single_remaining"] > 0:
-                            rack_allocation["Node-1"][slot_key] = module_counts[io_type]["module_name"]
-                            module_counts[io_type]["single_remaining"] -= 1
-                            slot_filled = True
-                            slot_index += 1
-                            break
-                
-                # Second priority: Dual_Red modules (2 consecutive slots)
-                if not slot_filled and consecutive_slots >= 2:
+
+                # First priority: Dual_Red modules (pair of slots)
+                if consecutive_slots >= 2:
                     for io_type in module_counts:
                         if module_counts[io_type]["dual_red_remaining"] > 0:
                             slot_num_2, slot_key_2 = node1_iom_slots[slot_index + 1]
@@ -163,7 +189,22 @@ class RackAllocator:
                             slot_filled = True
                             slot_index += 2
                             break
-                
+                    if not slot_filled and any(item["dual_red_remaining"] > 0 for item in module_counts.values()):
+                        # Cannot place any dual-red because there are no successive slots for any remaining dual-red module
+                        log(
+                            f"[RackAllocator] Node-1: Dual-red modules remain but no consecutive IOM slots available starting at {slot_key}."
+                        )
+
+                # Second priority: Single modules (1 slot)
+                if not slot_filled:
+                    for io_type in module_counts:
+                        if module_counts[io_type]["single_remaining"] > 0:
+                            rack_allocation["Node-1"][slot_key] = module_counts[io_type]["module_name"]
+                            module_counts[io_type]["single_remaining"] -= 1
+                            slot_filled = True
+                            slot_index += 1
+                            break
+
                 # If not even 1 slot available for remaining modules (skip slot)
                 if not slot_filled:
                     rack_allocation["Node-1"][slot_key] = ""
@@ -181,6 +222,7 @@ class RackAllocator:
                         available_slots.append((slot_num, slot_key))
                 
                 available_slots = sorted(available_slots)
+                log(f"[RackAllocator] Node-{node_num} available IOM slots: {[s for _, s in available_slots]}")
                 slot_index = 0
                 
                 while slot_index < len(available_slots):
@@ -194,19 +236,9 @@ class RackAllocator:
                             consecutive_slots = 2
                     
                     slot_filled = False
-                    
-                    # Single modules first
-                    if not slot_filled:
-                        for io_type in module_counts:
-                            if module_counts[io_type]["single_remaining"] > 0:
-                                rack_allocation[node_key][slot_key] = module_counts[io_type]["module_name"]
-                                module_counts[io_type]["single_remaining"] -= 1
-                                slot_filled = True
-                                slot_index += 1
-                                break
-                    
-                    # Dual_Red modules
-                    if not slot_filled and consecutive_slots >= 2:
+
+                    # First priority: Dual_Red modules (pair of slots)
+                    if consecutive_slots >= 2:
                         for io_type in module_counts:
                             if module_counts[io_type]["dual_red_remaining"] > 0:
                                 slot_num_2, slot_key_2 = available_slots[slot_index + 1]
@@ -216,10 +248,26 @@ class RackAllocator:
                                 slot_filled = True
                                 slot_index += 2
                                 break
-                    
+                        if not slot_filled and any(item["dual_red_remaining"] > 0 for item in module_counts.values()):
+                            log(
+                                f"[RackAllocator] Node-{node_num}: Dual-red modules remain but no consecutive IOM slots available starting at {slot_key}."
+                            )
+
+                    # Second priority: Single modules (1 slot)
+                    if not slot_filled:
+                        for io_type in module_counts:
+                            if module_counts[io_type]["single_remaining"] > 0:
+                                rack_allocation[node_key][slot_key] = module_counts[io_type]["module_name"]
+                                module_counts[io_type]["single_remaining"] -= 1
+                                slot_filled = True
+                                slot_index += 1
+                                break
+
                     if not slot_filled:
                         slot_index += 1
             
+            # Final summary of module placement
+            log(f"[RackAllocator] Allocation complete. Remaining module_counts: {module_counts}")
             return rack_allocation
         
         except Exception as e:

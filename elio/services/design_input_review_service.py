@@ -32,6 +32,7 @@ class DesignInputReviewService:
             signals = ExcelReader.read(uploaded_file)
             logger_callback(f"Successfully read {len(signals)} signals")
             
+
             # ====================================================================
             # SIGNAL SUMMARY ANALYSIS
             # ====================================================================
@@ -61,16 +62,14 @@ class DesignInputReviewService:
                     continue
                 
                 # Determine IS/Non-IS status
-                is_status = "IS"
                 if col_mapping.get("is_non_is") and signal.is_non_is:
-                    is_status = signal.is_non_is if signal.is_non_is.upper().startswith("IS") else "Non-IS"
+                    is_status = SignalClassifier.normalize_is_status(signal.is_non_is)
                 else:
                     is_status = "IS" if signal.signal_type in user_config.get("is_types", []) else "Non-IS"
                 
                 # Determine Redundancy status
-                redundancy_status = "Non-Redundant"
                 if col_mapping.get("io_redundancy") and signal.io_redundancy:
-                    redundancy_status = signal.io_redundancy
+                    redundancy_status = SignalClassifier.normalize_redundancy_status(signal.io_redundancy)
                 else:
                     redundancy_status = "Redundant" if signal.signal_type in user_config.get("redundancy_types", []) else "Non-Redundant"
                 
@@ -141,13 +140,13 @@ class DesignInputReviewService:
                     row["Signal Origin"] = user_config.get("system_type", "-")
                 
                 if col_mapping.get("io_redundancy") and signal.io_redundancy:
-                    row["IO Redundancy"] = signal.io_redundancy
+                    row["IO Redundancy"] = SignalClassifier.normalize_redundancy_status(signal.io_redundancy)
                 else:
                     redundancy_mark = signal.signal_type in user_config.get("redundancy_types", []) if signal.signal_type else False
                     row["IO Redundancy"] = "Yes" if redundancy_mark else "No"
                 
                 if col_mapping.get("is_non_is") and signal.is_non_is:
-                    row["IS/Non-IS"] = signal.is_non_is
+                    row["IS/Non-IS"] = SignalClassifier.normalize_is_status(signal.is_non_is)
                 else:
                     is_mark = signal.signal_type in user_config.get("is_types", []) if signal.signal_type else False
                     row["IS/Non-IS"] = "IS" if is_mark else "Non-IS"
@@ -163,7 +162,7 @@ class DesignInputReviewService:
             # ====================================================================
             wired_spares_percent = user_config.get("wired_spares", 0)
             
-            if wired_spares_percent > 0 and summary_breakdown:
+            if summary_breakdown:
                 signal_spares_table = SignalClassifier.build_signal_counts_table_with_spares(
                     summary_breakdown=summary_breakdown,
                     spare_percentage=wired_spares_percent
@@ -187,51 +186,48 @@ class DesignInputReviewService:
             selected_io_types = user_config.get("io_types", [])
             temperature_rating = user_config.get("temperature_rating")
             
-            if selected_io_types and wired_spares_percent > 0 and results["signal_spares_table"]:
-                # Get available modules
+            if results.get("signal_spares_table"):
+                # Get available modules (ensure we include all IO types needed by the signals)
+                required_io_types = list(results["signal_spares_table"].keys())
                 base_path = Path(__file__).parent.parent.parent
                 excel_path = base_path / "templates" / "Yokogawa_SIS_Constraints_Model_v3.xlsx"
-                
+
                 if excel_path.exists():
                     available_modules = ModuleSelector.get_available_modules(
                         excel_path=str(excel_path),
                         selected_io_types=selected_io_types,
-                        temperature_rating=temperature_rating
+                        temperature_rating=temperature_rating,
+                        required_io_types=required_io_types
                     )
-                    
-                    # Filter to only IOM type modules (for dynamic channel allocation)
-                    # Read Mounting_Rule to get which IO_Types have Type='IOM'
-                    try:
-                        mounting_rules_df = pd.read_excel(str(excel_path), sheet_name="Mounting_Rule")
-                        iom_io_types = set(
-                            mounting_rules_df[mounting_rules_df['Type'].astype(str).str.upper() == 'IOM']['IO_Type'].dropna().unique()
-                        )
-                        
-                        # Filter available_modules DataFrame to only IOM types
-                        if iom_io_types:
-                            available_modules = available_modules[available_modules['IO_Type'].isin(iom_io_types)].reset_index(drop=True)
-                            logger_callback(f"Filtered modules: {len(available_modules)} IOM modules available for allocation")
-                        else:
-                            logger_callback("Warning: No IOM type modules found in Mounting_Rule sheet")
-                    except Exception as e:
-                        logger_callback(f"Warning: Could not filter to IOM modules: {str(e)}")
-                    
+
                     results["available_modules"] = available_modules
                     logger_callback(f"Available modules loaded: {len(available_modules)} modules found")
-                    
+
                     # Calculate module allocation
                     module_allocation_df = ModuleCalculator.calculate_module_allocation(
                         signal_spares_table=results["signal_spares_table"],
-                        available_modules=available_modules
+                        available_modules=available_modules,
+                        logger=logger_callback
                     )
                     results["module_allocation"] = module_allocation_df
-                    
+
+                    # Log any placeholder modules indicating missing catalog matches
+                    if not module_allocation_df.empty and "Module" in module_allocation_df.columns:
+                        placeholder_rows = module_allocation_df[module_allocation_df["Module"].astype(str).str.startswith("UNKNOWN-")]
+                        if not placeholder_rows.empty:
+                            missing_types = placeholder_rows["IO_Type"].unique().tolist()
+                            logger_callback(
+                                f"WARNING: Missing module definitions for IO_Type(s): {missing_types}. "
+                                "Placeholder modules will be used in allocation output.",
+                                "WARNING"
+                            )
+
                     # Apply redundancy doubling
                     module_allocation_with_redundancy_df = ModuleCalculator.apply_redundancy_doubling(
                         allocation_df=module_allocation_df
                     )
                     results["module_allocation_with_redundancy"] = module_allocation_with_redundancy_df
-                    
+
                     for _, row in module_allocation_with_redundancy_df.iterrows():
                         is_red = row.get("IS-Red_Modules", 0)
                         is_nonred = row.get("IS-NonRed_Modules", 0)
@@ -321,7 +317,8 @@ class DesignInputReviewService:
                             available_modules=available_modules,
                             iom_slots_df=iom_slots_df
                         )
-                        
+
+                        # Slot allocation details should already include IO_Type via ModuleCalculator
                         results["slot_allocation_details_df"] = module_allocation_df
                         
                         if not module_allocation_df.empty:

@@ -96,6 +96,36 @@ class SignalClassifier:
         return SignalClassifier._extract_base_type(signal_type_str)
 
     @staticmethod
+    def normalize_redundancy_status(value) -> str:
+        """Normalize various redundancy indicators into 'Redundant' or 'Non-Redundant'."""
+        if value is None:
+            return "Non-Redundant"
+        if isinstance(value, bool):
+            return "Redundant" if value else "Non-Redundant"
+        v = str(value).strip().upper()
+        if not v:
+            return "Non-Redundant"
+        if v in ["R", "RED", "REDUNDANT", "YES", "Y", "TRUE", "1"]:
+            return "Redundant"
+        return "Non-Redundant"
+
+    @staticmethod
+    def normalize_is_status(value) -> str:
+        """Normalize various IS/Non-IS indicators into 'IS' or 'Non-IS'."""
+        if value is None:
+            return "Non-IS"
+        if isinstance(value, bool):
+            return "IS" if value else "Non-IS"
+        v = str(value).strip().upper()
+        if not v:
+            return "Non-IS"
+        if v.startswith("IS"):
+            return "IS"
+        if v.startswith("NIS") or v.startswith("NON"):
+            return "Non-IS"
+        return "Non-IS"
+
+    @staticmethod
     def is_valid_signal_type(signal_type: str) -> bool:
         """Check if a signal type is one of the 5 main types"""
         return signal_type in SignalClassifier.SIGNAL_TYPES

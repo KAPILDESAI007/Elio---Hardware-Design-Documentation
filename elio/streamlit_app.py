@@ -298,16 +298,18 @@ if page == "Design Input Review":
             # ====================================================================
             # AVAILABLE MODULES
             # ====================================================================
-            if isinstance(results["available_modules"], pd.DataFrame) and not results["available_modules"].empty:
-                st.subheader("🔧 Available Modules for Allocation")
-                # available_modules is now a DataFrame, display it directly
-                df_modules = results["available_modules"][["IO_Type", "Module", "Usable_Channels"]].copy()
-                st.dataframe(df_modules, width='stretch')
-                st.markdown("<hr style='margin: 0.1rem 0;'>", unsafe_allow_html=True)
-            elif results["available_modules"]:
-                st.subheader("🔧 Available Modules for Allocation")
-                st.info("Available modules data format not recognized")
-                st.markdown("<hr style='margin: 0.1rem 0;'>", unsafe_allow_html=True)
+            if results["signal_data"]:
+                if isinstance(results["available_modules"], pd.DataFrame) and not results["available_modules"].empty:
+                    st.subheader("🔧 Available Modules for Allocation")
+                    df_modules = results["available_modules"][ ["IO_Type", "Module", "Usable_Channels"] ].copy()
+                    st.dataframe(df_modules, width='stretch')
+                    st.markdown("<hr style='margin: 0.1rem 0;'>", unsafe_allow_html=True)
+                else:
+                    st.subheader("🔧 Available Modules for Allocation")
+                    st.info("Available modules data format not recognized or is empty")
+                    st.markdown("<hr style='margin: 0.1rem 0;'>", unsafe_allow_html=True)
+            else:
+                st.info("⏳ No signal data available")
             
             # ====================================================================
             # MODULE ALLOCATION REQUIRED

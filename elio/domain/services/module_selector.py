@@ -169,7 +169,8 @@ class ModuleSelector:
     def get_available_modules(
         excel_path: str,
         selected_io_types: List[str],
-        temperature_rating: Optional[str] = None
+        temperature_rating: Optional[str] = None,
+        required_io_types: Optional[List[str]] = None
     ) -> pd.DataFrame:
         """
         Main method to get available modules based on constraints.
@@ -179,6 +180,7 @@ class ModuleSelector:
             excel_path: Path to the Yokogawa constraints Excel file
             selected_io_types: List of selected IO types (e.g., ["FIO"])
             temperature_rating: User selected temperature rating (default: None)
+            required_io_types: Optional list of IO_Types (AI/DI/DO/AO) that must be present in the result
             
         Returns:
             DataFrame with columns {Module, IO_Type, Usable_Channels, Family, Ambient_Max_C}
@@ -187,6 +189,8 @@ class ModuleSelector:
             print(f"\n[ModuleSelector] Starting module selection...")
             print(f"[ModuleSelector] Selected IO Types: {selected_io_types}")
             print(f"[ModuleSelector] Temperature Rating: {temperature_rating}")
+            if required_io_types:
+                print(f"[ModuleSelector] Required IO Types (from signals): {required_io_types}")
             
             # Step 1: Load module catalog
             df_catalog = ModuleSelector.load_module_catalog_from_excel(excel_path)
@@ -204,6 +208,21 @@ class ModuleSelector:
             
             # Step 5: Apply temperature constraint
             df_filtered = ModuleSelector.apply_temperature_constraint(df_filtered, temperature_rating)
+            
+            # Ensure required IO types are present (so signals like DO/Redundant are not dropped)
+            if required_io_types:
+                required_upper = {str(x).strip().upper() for x in required_io_types if x}
+                present_upper = {str(x).strip().upper() for x in df_filtered.get('IO_Type', []).dropna().unique()}
+                missing = required_upper - present_upper
+                if missing:
+                    print(f"[ModuleSelector] WARNING: Required IO types missing after filtering: {sorted(missing)}")
+                    # Add missing IO types from the original catalog (without family filtering)
+                    missing_rows = df_catalog[df_catalog['IO_Type'].astype(str).str.strip().str.upper().isin(missing)]
+                    if not missing_rows.empty:
+                        print(f"[ModuleSelector] Including {len(missing_rows)} missing module(s) for required IO types")
+                        df_filtered = pd.concat([df_filtered, missing_rows], ignore_index=True)
+                    else:
+                        print(f"[ModuleSelector] WARNING: No modules found in catalog for missing IO types: {sorted(missing)}")
             
             print(f"[ModuleSelector] Final result: {len(df_filtered)} modules after all filters\n")
             
